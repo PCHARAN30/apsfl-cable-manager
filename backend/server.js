@@ -34,6 +34,11 @@ app.use("/api/customers", protect, customerRoutes);
 app.use("/api/payments", protect, paymentRoutes);
 app.use("/api/dashboard", protect, dashboardRoutes);
 
+// ─── Root Route (Browser Friendly) ────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.send("🚀 APSFL Backend is running successfully on Render!");
+});
+
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", time: new Date().toISOString() });
