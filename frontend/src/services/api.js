@@ -4,6 +4,7 @@ const api = axios.create({
   // Use the deployed backend URL in production, fallback to local proxy in dev
   baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
+  withCredentials: true,
 })
 
 // Add interceptor to attach token to every request securely
@@ -56,6 +57,7 @@ export const signup = (data) => api.post('/auth/signup', data)
 export const login = (credentials) => api.post('/auth/login', credentials)
 export const logout = () => api.post('/auth/logout')
 export const getCurrentUser = () => api.get('/auth/me')
+export const updateCurrentUser = (data) => api.put('/auth/me', data)
 
 
 export default api

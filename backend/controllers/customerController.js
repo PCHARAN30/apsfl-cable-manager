@@ -173,13 +173,17 @@ exports.importCustomers = async (req, res) => {
       }
 
       try {
-        await Customer.updateOne(
+        const result = await Customer.updateOne(
           { cafNumber: cafNumber.toUpperCase() },
           { $setOnInsert: { name, phone, address, cafNumber: cafNumber.toUpperCase() } },
           { upsert: true }
         );
-        const wasNew = await Customer.findOne({ cafNumber: cafNumber.toUpperCase() }).lean();
-        if (wasNew) imported++;
+        
+        if (result.upsertedCount > 0) {
+          imported++;
+        } else {
+          skipped++;
+        }
       } catch (e) {
         if (e.code === 11000) {
           skipped++; // duplicate

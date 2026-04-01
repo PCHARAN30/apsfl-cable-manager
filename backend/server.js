@@ -13,15 +13,29 @@ const { protect } = require("./middleware/authMiddleware");
 
 const app = express();
 
-// ─── DB ───────────────────────────────────────────────────────────────────────
-connectDB();
-
 // ─── Middleware ───────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://apsfl-cable-manager.vercel.app",
+  process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, "") : ""
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: (process.env.CLIENT_URL || "http://localhost:5173").replace(/\/$/, ""),
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   })
 );
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Credentials", "true");
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -57,9 +71,15 @@ app.use((err, req, res, next) => {
 
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 APSFL Backend running on http://localhost:${PORT}`);
-  startCronJobs();
-});
+
+const startServer = async () => {
+  await connectDB(); // Block server startup until DB is successfully connected
+  app.listen(PORT, () => {
+    console.log(`🚀 APSFL Backend running on http://localhost:${PORT}`);
+    startCronJobs();
+  });
+};
+
+startServer();
 
 module.exports = app;

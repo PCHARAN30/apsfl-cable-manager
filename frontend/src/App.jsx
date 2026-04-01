@@ -15,6 +15,12 @@ export default function App() {
   // Check for an existing session on initial load
   useEffect(() => {
     const verifySession = async () => {
+      const storedUserId = localStorage.getItem('apsfl_userId')
+      if (!storedUserId) {
+        setLoading(false)
+        return // Skip unnecessary API call if completely logged out
+      }
+      
       try {
         const res = await getCurrentUser()
         // Our backend returns { success: true, data: { username, role } }

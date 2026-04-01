@@ -28,12 +28,12 @@ export default function Login({ onLogin }) {
         const res = await login({ username, password })
         localStorage.setItem('apsfl_userId', res.data.userId)
         toast.success(t('loginSuccess') || 'Logged in successfully')
-        if (onLogin) onLogin(res.data)
+        if (onLogin) onLogin(res.data.data)
       } else {
         const res = await signup({ username, phone, password })
         localStorage.setItem('apsfl_userId', res.data.userId)
         toast.success('Signed up successfully')
-        if (onLogin) onLogin(res.data)
+        if (onLogin) onLogin(res.data.data)
       }
     } catch (err) {
       console.error("Login Error Details:", err);
