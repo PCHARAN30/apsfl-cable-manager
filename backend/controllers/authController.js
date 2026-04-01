@@ -1,46 +1,96 @@
-const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-// Using environment variables with a fallback to the requested default credentials
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'admin';
-const JWT_SECRET = process.env.JWT_SECRET || 'apsfl_super_secret_key_123';
+exports.signup = async (req, res) => {
+  try {
+    const { username, phone, password } = req.body;
 
-exports.login = (req, res) => {
-  const { username, password } = req.body;
+    if (!username || !phone || !password) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ success: false, message: 'Invalid 10-digit phone number' });
+    }
 
-  console.log("👉 Login attempt:", { username, password });
-  console.log("👉 Expected credentials:", { ADMIN_USER, ADMIN_PASS });
+    const existing = await User.findOne({ username });
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'Username already exists' });
+    }
 
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    const token = jwt.sign({ username, role: 'admin' }, JWT_SECRET, { expiresIn: '1d' });
+    const user = await User.create({ username, phone, password });
 
-    // Set JWT in a secure HTTP-only cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    return res.status(201).json({ 
+      success: true, 
+      message: 'Signed up successfully', 
+      userId: user._id.toString(), 
+      data: { username: user.username } 
     });
-
-    return res.json({ success: true, message: 'Logged in successfully', data: { username, role: 'admin' } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
+};
 
-  return res.status(401).json({ success: false, message: 'Invalid username or password' });
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+
+    if (user && user.matchPassword(password)) {
+      return res.json({ 
+        success: true, 
+        message: 'Logged in successfully', 
+        userId: user._id.toString(), 
+        data: { username: user.username } 
+      });
+    }
+
+    return res.status(401).json({ success: false, message: 'Invalid username or password' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 exports.logout = (req, res) => {
-  res.clearCookie('token');
   res.json({ success: true, message: 'Logged out successfully' });
 };
 
-exports.getMe = (req, res) => {
-  const token = req.cookies?.token;
-  if (!token) return res.status(401).json({ success: false, message: 'Not authenticated' });
-
+exports.getMe = async (req, res) => {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    res.json({ success: true, data: decoded });
+    const userId = req.headers.authorization;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(401).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, data: { username: user.username, phone: user.phone } });
   } catch (err) {
-    res.status(401).json({ success: false, message: 'Invalid token' });
+    res.status(401).json({ success: false, message: 'Invalid session' });
+  }
+};
+
+exports.updateMe = async (req, res) => {
+  try {
+    const userId = req.headers.authorization;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(401).json({ success: false, message: 'User not found' });
+
+    const { phone, password } = req.body;
+    if (phone) {
+      if (!/^\d{10}$/.test(phone)) return res.status(400).json({ success: false, message: 'Invalid 10-digit phone number' });
+      user.phone = phone;
+    }
+    if (password) {
+      if (password.length < 8) return res.status(400).json({ success: false, message: 'Password must be at least 8 characters long' });
+      user.password = password;
+    }
+    await user.save();
+
+    res.json({ success: true, message: 'Profile updated successfully', data: { username: user.username, phone: user.phone } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

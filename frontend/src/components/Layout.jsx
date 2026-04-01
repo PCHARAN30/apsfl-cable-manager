@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useLang } from '../context/LanguageContext'
 import { logout } from '../services/api'
 import toast from 'react-hot-toast'
+import ProfileModal from './ProfileModal'
 
 const IcoDash = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
 const IcoUsers = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
@@ -14,18 +15,21 @@ export default function Layout({ user, onLogout, children }) {
   const { pathname } = useLocation()
   const [loggingOut, setLoggingOut] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [profileModal, setProfileModal] = useState(false)
 
   const handleLogout = async () => {
     setLoggingOut(true)
     try {
       await logout()
-      toast.success(t('logoutSuccess') || 'Logged out successfully')
-      if (onLogout) onLogout()
     } catch (err) {
-      toast.error('Failed to log out')
-    } finally {
-      setLoggingOut(false)
+      console.warn('Backend logout failed, clearing local session anyway.')
     }
+    
+    // ALWAYS clear frontend state regardless of backend success
+    localStorage.removeItem('apsfl_userId')
+    toast.success(t('logoutSuccess') || 'Logged out successfully')
+    if (onLogout) onLogout()
+    setLoggingOut(false)
   }
 
   const navItems = [
@@ -85,7 +89,12 @@ export default function Layout({ user, onLogout, children }) {
 
         <div className="p-4 border-t border-white/5 flex flex-col gap-4 bg-white/[0.02]">
           <div className="flex items-center justify-between px-2">
-            <span className="text-sm font-medium text-slate-300">{user?.username}</span>
+            <button onClick={() => setProfileModal(true)} className="text-sm font-medium text-slate-300 hover:text-white transition-colors flex items-center gap-1.5 outline-none">
+              {user?.username}
+              <svg className="w-3.5 h-3.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
             <button onClick={toggleLang} className="bg-white/10 hover:bg-white/20 transition-colors border border-white/10 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
               {lang.toUpperCase()}
             </button>
@@ -102,6 +111,8 @@ export default function Layout({ user, onLogout, children }) {
           {children}
         </div>
       </main>
+
+      {profileModal && <ProfileModal user={user} onClose={() => setProfileModal(false)} onSuccess={() => window.location.reload()} />}
     </div>
   )
 }

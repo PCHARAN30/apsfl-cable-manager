@@ -1,19 +1,21 @@
-const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'apsfl_super_secret_key_123';
-
-exports.protect = (req, res, next) => {
-  const token = req.cookies?.token;
-  
-  if (!token) {
-    return res.status(401).json({ success: false, message: 'Not authenticated. No token provided.' });
-  }
-
+exports.protect = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded; // Attach user payload to request
+    const userId = req.headers.authorization;
+    
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Not authenticated. No user ID provided.' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated. User not found.' });
+    }
+
+    req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ success: false, message: 'Not authenticated. Invalid token.' });
+    return res.status(401).json({ success: false, message: 'Authentication failed.' });
   }
 };

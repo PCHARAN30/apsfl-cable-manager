@@ -4,8 +4,26 @@ const api = axios.create({
   // Use the deployed backend URL in production, fallback to local proxy in dev
   baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
-  withCredentials: true,
 })
+
+// Add interceptor to attach token to every request securely
+api.interceptors.request.use((config) => {
+  const userId = localStorage.getItem('apsfl_userId')
+  if (userId) config.headers.Authorization = userId
+  return config
+})
+
+// Add response interceptor to auto-logout on invalid sessions
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && error.config && !error.config.url.includes('/auth/')) {
+      localStorage.removeItem('apsfl_userId')
+      window.location.href = '/' // Kicks user back to login instantly
+    }
+    return Promise.reject(error)
+  }
+)
 
 // ── Customers ──────────────────────────────────────────────────────────────────
 export const getCustomers = (params) => api.get('/customers', { params })
@@ -34,6 +52,7 @@ export const getMonthlyChart = (year) => api.get('/dashboard/monthly-chart', { p
 export const getYearlyChart = () => api.get('/dashboard/yearly')
 
 // ── auth ───────────────────────────────────────────────────────────────
+export const signup = (data) => api.post('/auth/signup', data)
 export const login = (credentials) => api.post('/auth/login', credentials)
 export const logout = () => api.post('/auth/logout')
 export const getCurrentUser = () => api.get('/auth/me')
