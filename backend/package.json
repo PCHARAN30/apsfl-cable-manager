@@ -1,0 +1,25 @@
+{
+  "name": "apsfl-backend",
+  "version": "1.0.0",
+  "description": "APSFL Cable Operator Management System - Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.3.2",
+    "multer": "^2.0.0",
+    "node-cron": "^3.0.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

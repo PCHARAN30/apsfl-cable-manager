@@ -1,0 +1,63 @@
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./config/db");
+const startCronJobs = require("./jobs/cronJob");
+
+const customerRoutes = require("./routes/customerRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
+const authRoutes = require("./routes/authRoutes");
+const { protect } = require("./middleware/authMiddleware");
+
+const app = express();
+
+// ─── DB ───────────────────────────────────────────────────────────────────────
+connectDB();
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// ─── API Routes ───────────────────────────────────────────────────────────────
+app.use("/api/auth", authRoutes);
+app.use("/api/customers", protect, customerRoutes);
+app.use("/api/payments", protect, paymentRoutes);
+app.use("/api/dashboard", protect, dashboardRoutes);
+
+// ─── Health check ─────────────────────────────────────────────────────────────
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK", time: new Date().toISOString() });
+});
+
+// ─── 404 Handler ──────────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
+});
+
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
+
+// ─── Start Server ─────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 APSFL Backend running on http://localhost:${PORT}`);
+  startCronJobs();
+});
+
+module.exports = app;
