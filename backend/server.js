@@ -1,8 +1,8 @@
 require("dotenv").config();
 const express = require("express");
+const connectDB = require("./config/db");
 const cors = require("cors");
 const path = require("path");
-const connectDB = require("./config/db");
 const startCronJobs = require("./jobs/cronJob");
 
 const customerRoutes = require("./routes/customerRoutes");

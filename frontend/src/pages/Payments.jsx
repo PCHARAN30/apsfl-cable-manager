@@ -33,7 +33,7 @@ export default function Payments() {
     <div className="page">
       <div className="fade-up flex flex-wrap items-center justify-between gap-3" style={{ marginBottom:4 }}>
         <div>
-          <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'white' }}>{t('paymentHistory')}</h1>
+          <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('paymentHistory')}</h1>
           <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} total records</p>
         </div>
         <div style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:700, fontSize:16, color:'#34d399' }}>
@@ -42,21 +42,21 @@ export default function Payments() {
       </div>
 
       {/* Filters */}
-      <div className="fade-up stagger-1 mt-6 flex flex-wrap gap-4 items-end bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-lg p-4 rounded-2xl">
+      <div className="fade-up stagger-1 mt-6 flex flex-wrap gap-4 items-end glass-panel p-4 rounded-2xl">
         <div>
           <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('from')}</label>
-          <input type="date" className="w-full sm:w-auto bg-slate-900/50 border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>setFrom(e.target.value)}/>
+          <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>setFrom(e.target.value)}/>
         </div>
         <div>
           <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('to')}</label>
-          <input type="date" className="w-full sm:w-auto bg-slate-900/50 border border-white/10 text-white text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
+          <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
         </div>
         <button onClick={load} className="btn-primary">{t('filter')}</button>
         {(from||to) && <button onClick={()=>{ setFrom(''); setTo(''); setTimeout(load,100) }} className="btn-secondary">{t('clear')}</button>}
       </div>
 
       {/* Table */}
-      <div className="fade-up stagger-2 mt-6 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-2xl shadow-black/20 overflow-hidden">
+      <div className="fade-up stagger-2 mt-6 rounded-2xl glass-panel overflow-hidden">
         <div className="overflow-x-auto">
           <table className="tbl">
             <thead>
@@ -79,7 +79,7 @@ export default function Payments() {
               ) : payments.map((p,i)=>(
                 <tr key={p._id} className="tbl-row">
                   <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{i+1}</td>
-                  <td className="tbl-cell" style={{ fontWeight:500, color:'white' }}>{p.customerName}</td>
+                  <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>{p.customerName}</td>
                   <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{p.cafNumber}</td>
                   <td className="tbl-cell">
                     <span className={p.paymentType==='FULL'?'badge-paid':'badge-partial'}>{p.paymentType}</span>

@@ -90,6 +90,9 @@ export const translations = {
     adding: 'Adding...',
     addBtn: 'Add Customer',
     paidThisMonth: '% paid this month',
+    closeBtn: 'Close',
+    paymentHistoryFor: 'Payment History for',
+    noHistoryFound: 'No history found for this customer.',
   },
   te: {
     // Nav
@@ -178,6 +181,9 @@ export const translations = {
     adding: 'జోడిస్తోంది...',
     addBtn: 'కస్టమర్ జోడించు',
     paidThisMonth: '% ఈ నెల చెల్లించారు',
+    closeBtn: 'మూసివేయు',
+    paymentHistoryFor: 'చెల్లింపు చరిత్ర -',
+    noHistoryFound: 'ఈ కస్టమర్‌కు చరిత్ర లేదు.',
   }
 }
 

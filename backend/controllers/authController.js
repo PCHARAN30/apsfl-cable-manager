@@ -2,7 +2,13 @@ const User = require('../models/User');
 
 exports.signup = async (req, res) => {
   try {
-    const { username, phone, password } = req.body;
+    const { username, email, phone, password, operatorCode } = req.body;
+
+    // 1. Validate Operator Code
+    const validCode = process.env.OPERATOR_CODE;
+    if (!validCode || operatorCode !== validCode) {
+      return res.status(403).json({ success: false, message: 'Invalid Operator Code. Access denied.' });
+    }
 
     if (!username || !phone || !password) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
@@ -19,13 +25,13 @@ exports.signup = async (req, res) => {
       return res.status(409).json({ success: false, message: 'Username already exists' });
     }
 
-    const user = await User.create({ username, phone, password });
+    const user = await User.create({ username, email, phone, password });
 
     return res.status(201).json({ 
       success: true, 
       message: 'Signed up successfully', 
       userId: user._id.toString(), 
-      data: { username: user.username } 
+      data: { username: user.username, email: user.email } 
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

@@ -33,16 +33,16 @@ export default function Import() {
   return (
     <div className="page" style={{ maxWidth:640 }}>
       <div className="fade-up" style={{ marginBottom:20 }}>
-        <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'white' }}>{t('importCustomers')}</h1>
+        <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('importCustomers')}</h1>
         <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{t('uploadSubtitle')}</p>
       </div>
 
       {/* Format guide */}
-      <div className="p-5 mt-6 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-lg fade-up stagger-1 mb-5">
+      <div className="p-5 mt-6 rounded-2xl glass-panel fade-up stagger-1 mb-5">
         <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:10 }}>
           {t('expectedColumns')}
         </p>
-        <div className="font-mono text-sm bg-slate-900/50 rounded-xl p-4 border border-white/5">
+        <div className="font-mono text-sm bg-[var(--surface2)] rounded-xl p-4 border border-[var(--border-color)]">
           <span style={{ color:'#34d399' }}>name</span>, <span style={{ color:'#fbbf24' }}>phone</span>, <span style={{ color:'#60a5fa' }}>caf</span>
           <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:6, fontFamily:'DM Sans,sans-serif' }}>
             Also accepts: "customer name", "mobile", "caf number", "caf no"…
@@ -56,7 +56,7 @@ export default function Import() {
         onDragLeave={()=>setDragging(false)}
         onDrop={e=>{ e.preventDefault(); setDragging(false); const f=e.dataTransfer.files[0]; if(f)handleFile(f) }}
         onClick={()=>inputRef.current?.click()}
-        className={`fade-up stagger-2 p-12 text-center cursor-pointer border-2 border-dashed rounded-3xl transition-all duration-300 backdrop-blur-xl shadow-2xl ${dragging ? 'border-emerald-500 bg-emerald-500/5' : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.04]'}`}
+        className={`fade-up stagger-2 p-12 text-center cursor-pointer border-2 border-dashed rounded-3xl transition-all duration-300 backdrop-blur-xl shadow-2xl ${dragging ? 'border-emerald-500 bg-emerald-500/5' : 'border-[var(--border-color)] bg-[var(--glass-bg)] hover:opacity-80'}`}
       >
         <input ref={inputRef} type="file" style={{ display:'none' }} accept=".csv,.xlsx,.xls,.txt"
           onChange={e=>e.target.files[0]&&handleFile(e.target.files[0])}/>
@@ -67,7 +67,7 @@ export default function Import() {
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
             </div>
-            <p style={{ fontWeight:600, color:'white', marginBottom:4 }}>{file.name}</p>
+            <p style={{ fontWeight:600, color:'var(--text-base)', marginBottom:4 }}>{file.name}</p>
             <p style={{ fontSize:13, color:'var(--text-muted)' }}>{(file.size/1024).toFixed(1)} KB</p>
             <button onClick={e=>{ e.stopPropagation(); setFile(null) }}
               style={{ marginTop:10, fontSize:12, color:'#f87171', background:'none', border:'none', cursor:'pointer', textDecoration:'underline' }}>
@@ -102,15 +102,15 @@ export default function Import() {
       )}
 
       {result && (
-        <div className="p-6 mt-5 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-xl fade-up">
-          <p className="font-semibold text-white mb-4 text-base">{t('importResult')}</p>
+        <div className="p-6 mt-5 rounded-2xl glass-panel fade-up">
+          <p className="font-semibold text-[var(--text-base)] mb-4 text-base">{t('importResult')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { label:t('totalRows'), value:result.total,    color:'#94a3b8' },
               { label:t('imported'),  value:result.imported, color:'#34d399' },
               { label:t('skipped'),   value:result.skipped,  color:'#fbbf24' },
             ].map((s,i)=>(
-              <div key={i} className="p-4 text-center bg-slate-900/50 rounded-xl border border-white/5">
+              <div key={i} className="p-4 text-center bg-[var(--surface2)] rounded-xl border border-[var(--border-color)]">
                 <p style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:28, color:s.color }}>{s.value}</p>
                 <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{s.label}</p>
               </div>
@@ -120,7 +120,7 @@ export default function Import() {
       )}
 
       {/* Instructions */}
-      <div className="p-6 mt-5 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-xl fade-up stagger-3">
+      <div className="p-6 mt-5 rounded-2xl glass-panel fade-up stagger-3">
         <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:12 }}>
           {t('howToExport')}
         </p>

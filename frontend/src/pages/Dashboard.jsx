@@ -68,7 +68,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="fade-up flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'white' }}>{t('dashboard')}</h1>
+          <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('dashboard')}</h1>
           <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>
             {new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
           </p>
@@ -84,7 +84,7 @@ export default function Dashboard() {
       {/* Top stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
         {topCards.map((c, i) => (
-          <div key={i} className={`p-5 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-xl shadow-black/20 hover:shadow-black/40 hover:-translate-y-1 transition-all duration-300 fade-up stagger-${i+1}`}>
+          <div key={i} className={`p-5 rounded-2xl glass-panel fade-up stagger-${i+1}`}>
             <div className="flex items-start justify-between mb-3">
               <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)' }}>{c.label}</p>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:`${c.color}18` }}>
@@ -100,7 +100,7 @@ export default function Dashboard() {
       {/* Bottom stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
         {bottomCards.map((c, i) => (
-          <div key={i} className={`p-5 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-xl shadow-black/20 fade-up stagger-${i+5}`}>
+          <div key={i} className={`p-5 rounded-2xl glass-panel fade-up stagger-${i+5}`}>
             <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:8 }}>{c.label}</p>
             <p style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:28, color:c.color }}>{c.value}</p>
             <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{c.sub}</p>
@@ -111,8 +111,8 @@ export default function Dashboard() {
       {/* Chart + expiring */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
         {/* Income chart */}
-        <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-xl shadow-black/20 lg:col-span-2 fade-up stagger-5">
-          <p style={{ fontWeight:600, color:'white', marginBottom:16, fontSize:15 }}>{t('incomeThisMonth')}</p>
+        <div className="p-6 rounded-2xl glass-panel lg:col-span-2 fade-up stagger-5">
+          <p style={{ fontWeight:600, color:'var(--text-base)', marginBottom:16, fontSize:15 }}>{t('incomeThisMonth')}</p>
           {chart.length === 0 ? (
             <div style={{ height:180, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-dim)', fontSize:14 }}>
               {t('noPayments')}
@@ -126,12 +126,12 @@ export default function Dashboard() {
                     <stop offset="95%" stopColor="#15b070" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)"/>
-                <XAxis dataKey="date" tick={{ fill:'#475569', fontSize:11 }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fill:'#475569', fontSize:11 }} axisLine={false} tickLine={false}
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)"/>
+                <XAxis dataKey="date" tick={{ fill:'var(--chart-text)', fontSize:11 }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fill:'var(--chart-text)', fontSize:11 }} axisLine={false} tickLine={false}
                   tickFormatter={v=>`₹${v>=1000?(v/1000).toFixed(0)+'k':v}`}/>
-                <Tooltip contentStyle={{ background:'#0f1929', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, fontSize:12 }}
-                  labelStyle={{ color:'#94a3b8' }} formatter={v=>[`₹${v.toLocaleString('en-IN')}`,'Income']}/>
+                <Tooltip contentStyle={{ background:'var(--bg-surface)', border:'1px solid var(--border-color)', borderRadius:12, fontSize:12, color:'var(--text-base)' }}
+                  labelStyle={{ color:'var(--text-muted)' }} formatter={v=>[`₹${v.toLocaleString('en-IN')}`,'Income']}/>
                 <Area type="monotone" dataKey="income" stroke="#15b070" strokeWidth={2.5}
                   fill="url(#g)" dot={false} activeDot={{ r:5, fill:'#15b070', stroke:'#080e1a', strokeWidth:2 }}/>
               </AreaChart>
@@ -140,10 +140,10 @@ export default function Dashboard() {
         </div>
 
         {/* Expiring soon */}
-        <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-xl shadow-black/20 fade-up stagger-6">
+        <div className="p-6 rounded-2xl glass-panel fade-up stagger-6">
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
             <span className="pulse-dot" />
-            <p style={{ fontWeight:600, color:'white', fontSize:14 }}>{t('expiringIn7Days')}</p>
+            <p style={{ fontWeight:600, color:'var(--text-base)', fontSize:14 }}>{t('expiringIn7Days')}</p>
           </div>
           {expiring.length === 0 ? (
             <p style={{ fontSize:14, color:'var(--text-dim)', textAlign:'center', padding:'32px 0' }}>{t('allGood')}</p>
@@ -154,7 +154,7 @@ export default function Dashboard() {
                 return (
                   <div key={c._id} className="card-inner" style={{ padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <div>
-                      <p style={{ fontSize:13, fontWeight:500, color:'white' }}>{c.name}</p>
+                      <p style={{ fontSize:13, fontWeight:500, color:'var(--text-base)' }}>{c.name}</p>
                       <p style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'JetBrains Mono,monospace' }}>{c.cafNumber}</p>
                     </div>
                     <div style={{ textAlign:'right' }}>
@@ -171,7 +171,7 @@ export default function Dashboard() {
 
       {/* Progress bar */}
       {total > 0 && (
-        <div className="p-6 mt-4 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-xl shadow-xl shadow-black/20 fade-up stagger-7">
+        <div className="p-6 mt-4 rounded-2xl glass-panel fade-up stagger-7">
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:'var(--text-muted)', marginBottom:10 }}>
             <span>{t('collectionProgress')}</span>
             <span style={{ fontWeight:600, color:'#34d399' }}>{paidPct}% {t('collected')}</span>

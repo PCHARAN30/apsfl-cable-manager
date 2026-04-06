@@ -43,12 +43,12 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity" onClick={onClose}/>
-      <div className="relative w-full max-w-[440px] p-6 sm:p-8 rounded-3xl bg-slate-900 border border-white/10 shadow-2xl shadow-black/60 scale-in">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
+      <div className="relative w-full max-w-[440px] p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in">
         {/* Header */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
           <div>
-            <h2 style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:18, color:'white' }}>{customer.name}</h2>
+            <h2 style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:18, color:'var(--text-base)' }}>{customer.name}</h2>
             <p style={{ fontSize:12, color:'var(--text-muted)', fontFamily:'JetBrains Mono,monospace', marginTop:2 }}>{customer.cafNumber}</p>
           </div>
           <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', padding:4 }}>

@@ -1,8 +1,11 @@
 import axios from 'axios'
 
 const api = axios.create({
-  // Use the deployed backend URL in production, fallback to local proxy in dev
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  // The base URL is configured *exclusively* via the VITE_API_URL environment variable.
+  // For local development, create a .env file in the `frontend` directory and set:
+  // VITE_API_URL=/api
+  // This uses the Vite proxy. For production, the build pipeline (e.g., Vercel) will set this to the live backend URL.
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 30000,
   withCredentials: true,
 })
