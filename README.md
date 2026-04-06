@@ -165,4 +165,4 @@ CLIENT_URL=http://localhost:5173
 - [ ] Razorpay payment link generation
 - [ ] Multi-operator login (JWT auth)
 - [ ] Print monthly collection report (PDF)
-- [x] Mobile-responsive PWA
+- [ ] Mobile-responsive PWA

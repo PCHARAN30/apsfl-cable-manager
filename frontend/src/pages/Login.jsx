@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { login, signup } from '../services/api'
 import toast from 'react-hot-toast'
 import { useLang } from '../context/LanguageContext'
 
 export default function Login({ onLogin }) {
   const { t } = useLang()
+  const navigate = useNavigate()
   const [isLogin, setIsLogin] = useState(true)
   const [username, setUsername] = useState('')
   const [phone, setPhone] = useState('')
@@ -28,11 +30,13 @@ export default function Login({ onLogin }) {
         const res = await login({ username, password })
         localStorage.setItem('apsfl_userId', res.data.userId)
         toast.success(t('loginSuccess') || 'Logged in successfully')
+        navigate('/customers')
         if (onLogin) onLogin(res.data.data)
       } else {
         const res = await signup({ username, phone, password })
         localStorage.setItem('apsfl_userId', res.data.userId)
         toast.success('Signed up successfully')
+        navigate('/customers')
         if (onLogin) onLogin(res.data.data)
       }
     } catch (err) {
