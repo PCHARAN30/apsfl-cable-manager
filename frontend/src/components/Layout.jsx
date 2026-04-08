@@ -17,6 +17,7 @@ export default function Layout({ user, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileModal, setProfileModal] = useState(false)
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
+  const [isTelugu, setIsTelugu] = useState(false)
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark')
@@ -25,6 +26,17 @@ export default function Layout({ user, onLogout, children }) {
   }, [theme])
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
+
+  const handleTranslateToggle = () => {
+    const combo = document.querySelector('.goog-te-combo')
+    if (combo) {
+      combo.value = isTelugu ? 'en' : 'te'
+      combo.dispatchEvent(new Event('change', { bubbles: true }))
+      setIsTelugu(!isTelugu)
+    } else {
+      toast.error('Translator is still loading. Please wait...')
+    }
+  }
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -108,7 +120,13 @@ export default function Layout({ user, onLogout, children }) {
               <button onClick={toggleTheme} className="bg-[var(--glass-bg)] hover:opacity-80 transition-opacity border border-[var(--border-color)] text-[var(--text-base)] px-2.5 py-1.5 rounded-lg text-xs font-bold shadow-sm">
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
-              <div id="google_translate_element" className="h-8 overflow-hidden rounded-lg flex items-center"></div>
+              <button 
+                onClick={handleTranslateToggle}
+                className="bg-[var(--glass-bg)] hover:opacity-80 transition-opacity border border-[var(--border-color)] text-[var(--text-base)] px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm"
+              >
+                {isTelugu ? 'English' : 'Telugu'}
+              </button>
+              <div id="google_translate_element" className="hidden"></div>
             </div>
           </div>
           <button onClick={handleLogout} disabled={loggingOut} className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm flex justify-center items-center gap-2">
