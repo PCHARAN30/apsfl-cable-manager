@@ -20,29 +20,40 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
       const res = await getPaymentHistory(customer._id)
       const payments = res.data.data || []
       
-      // Group by Year -> Month
-      const grouped = payments.reduce((acc, payment) => {
-        const date = new Date(payment.paymentDate || payment.createdAt)
-        const year = date.getFullYear()
-        const month = date.toLocaleString('default', { month: 'short' }) // e.g., 'Jan'
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-        if (!acc[year]) acc[year] = {}
-        if (!acc[year][month]) acc[year][month] = []
-        
-        acc[year][month].push(payment)
-        return acc
-      }, {})
+      // Determine join date & boundaries
+      let joinDate = customer.createdAt ? new Date(customer.createdAt) : new Date();
+      // Fallback in case a payment was recorded prior to the database 'createdAt' field
+      if (payments.length > 0) {
+        const earliestPayment = new Date(Math.min(...payments.map(p => new Date(p.paymentDate || p.createdAt))));
+        if (earliestPayment < joinDate) joinDate = earliestPayment;
+      }
+      
+      const joinYear = joinDate.getFullYear();
+      const joinMonth = joinDate.getMonth();
 
-      // Convert to array and sort Years descending
-      const formatted = Object.keys(grouped)
-        .sort((a, b) => b - a)
-        .map(year => ({
-          year,
-          months: Object.keys(grouped[year]).map(month => ({
-            month,
-            payments: grouped[year][month]
-          }))
-        }))
+      const currentYear = new Date().getFullYear();
+      const startYear = joinYear;
+      const paymentYears = payments.map(p => new Date(p.paymentDate || p.createdAt).getFullYear());
+      const endYear = Math.max(currentYear, ...paymentYears.length ? paymentYears : [currentYear]);
+
+      const formatted = [];
+
+      // Generate matrix from current year backwards to join year
+      for (let y = endYear; y >= startYear; y--) {
+        const yearMonths = months.map((month, index) => {
+          const payment = payments.find(p => {
+            const d = new Date(p.paymentDate || p.createdAt);
+            return d.getFullYear() === y && d.getMonth() === index;
+          });
+
+          if (y === joinYear && index < joinMonth) return { month, status: "not_applicable" };
+          if (payment) return { month, status: "paid", amount: payment.amountPaid, date: payment.paymentDate || payment.createdAt, method: payment.notes || 'Cash' };
+          return { month, status: "unpaid" };
+        });
+        formatted.push({ year: y, months: yearMonths });
+      }
 
       setGroupedHistory(formatted)
     } catch (error) {
@@ -89,23 +100,46 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
                 <div className="bg-[var(--border-color)] px-5 py-3 border-b border-[var(--border-color)] font-bold text-[var(--text-base)] shadow-inner">
                   {yearGroup.year}
                 </div>
-                <div className="p-4 space-y-4">
-                  {yearGroup.months.map((monthGroup) => (
-                    <div key={monthGroup.month} className="ml-2 border-l-2 border-emerald-500/30 pl-4 relative">
-                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
-                      <h3 className="text-sm font-bold text-emerald-400 mb-2 uppercase tracking-wider">{monthGroup.month}</h3>
-                      <div className="space-y-2">
-                        {monthGroup.payments.map((p, i) => (
-                          <div key={i} className="bg-[var(--bg-base)] rounded-lg p-3 flex justify-between items-center border border-[var(--border-color)] hover:opacity-80 transition-colors">
-                            <span className="text-sm font-medium text-[var(--text-base)]">
-                              {p.paymentType === 'FULL' ? '✔' : '⚠️'} {p.paymentType}
-                            </span>
-                            <span className="text-lg font-bold text-[var(--text-base)]">₹{p.amountPaid}</span>
+                <div className="p-3 space-y-1.5">
+                  {yearGroup.months.map((m, i) => {
+                    if (m.status === 'not_applicable') {
+                      return (
+                        <div key={i} className="flex items-center gap-4 py-2 px-3 opacity-40">
+                          <div className="w-10 text-sm font-bold text-[var(--text-muted)] uppercase tracking-wider">{m.month}</div>
+                          <div className="flex-1 text-[var(--text-muted)] text-sm font-medium">— (Not applicable)</div>
+                        </div>
+                      )
+                    }
+                    if (m.status === 'paid') {
+                      return (
+                        <div key={i} className="flex items-center gap-4 py-2.5 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                          <div className="w-10 text-sm font-bold text-[var(--text-base)] uppercase tracking-wider">{m.month}</div>
+                          <div className="flex-1 flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-emerald-500 font-bold text-sm flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                              Paid ₹{m.amount}
+                            </div>
+                            <div className="text-xs text-emerald-500/80 font-medium">
+                              ({new Date(m.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, {m.method})
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                        </div>
+                      )
+                    }
+                    if (m.status === 'unpaid') {
+                      return (
+                        <div key={i} className="flex items-center gap-4 py-2.5 px-3 rounded-lg bg-red-500/5 border border-red-500/10">
+                          <div className="w-10 text-sm font-bold text-[var(--text-base)] uppercase tracking-wider">{m.month}</div>
+                          <div className="flex-1 flex items-center justify-between">
+                            <div className="text-red-400 font-bold text-sm flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                              Unpaid
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                  })}
                 </div>
               </div>
             ))
