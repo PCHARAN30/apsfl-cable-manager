@@ -157,7 +157,7 @@ export default function Login({ onLogin }) {
             />
           </div>
             <button type="submit" disabled={loading} className="w-full mt-4 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/30 transition-all duration-200">
-              {loading ? 'Processing...' : (isLogin ? (t('Login') || 'Login') : 'Sign Up')}
+              {loading ? 'Processing...' : (isLogin ? (t('loginBtn') || 'Login') : 'Sign Up')}
             </button>
           </form>
 

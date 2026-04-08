@@ -4,6 +4,13 @@ const LanguageContext = createContext()
 
 export const translations = {
   en: {
+    // Auth
+    loginTitle: 'Login',
+    loginBtn: 'Login',
+    username: 'Username',
+    password: 'Password',
+    loginSuccess: 'Logged in successfully',
+    loginFailed: 'Login failed',
     // Nav
     dashboard: 'Dashboard',
     customers: 'Customers',
@@ -95,6 +102,13 @@ export const translations = {
     noHistoryFound: 'No history found for this customer.',
   },
   te: {
+    // Auth
+    loginTitle: 'లాగిన్',
+    loginBtn: 'లాగిన్ చేయండి',
+    username: 'వాడుకరిపేరు',
+    password: 'పాస్‌వర్డ్',
+    loginSuccess: 'విజయవంతంగా లాగిన్ అయ్యారు',
+    loginFailed: 'లాగిన్ విఫలమైంది',
     // Nav
     dashboard: 'డాష్‌బోర్డ్',
     customers: 'కస్టమర్లు',

@@ -34,7 +34,7 @@ export default function Payments() {
       <div className="fade-up flex flex-wrap items-center justify-between gap-3" style={{ marginBottom:4 }}>
         <div>
           <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('paymentHistory')}</h1>
-          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} total records</p>
+          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
         </div>
         <div style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:700, fontSize:16, color:'#34d399' }}>
           {t('total')}: ₹{totalAmt.toLocaleString('en-IN')}
