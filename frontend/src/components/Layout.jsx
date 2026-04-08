@@ -11,7 +11,7 @@ const IcoPay = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" st
 const IcoImport = () => <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
 
 export default function Layout({ user, onLogout, children }) {
-  const { t, lang, toggleLang } = useLang()
+  const { t } = useLang()
   const { pathname } = useLocation()
   const [loggingOut, setLoggingOut] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -108,9 +108,7 @@ export default function Layout({ user, onLogout, children }) {
               <button onClick={toggleTheme} className="bg-[var(--glass-bg)] hover:opacity-80 transition-opacity border border-[var(--border-color)] text-[var(--text-base)] px-2.5 py-1.5 rounded-lg text-xs font-bold shadow-sm">
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
-              <button onClick={toggleLang} className="bg-[var(--glass-bg)] hover:opacity-80 transition-opacity border border-[var(--border-color)] text-[var(--text-base)] px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">
-                {lang.toUpperCase()}
-              </button>
+              <div id="google_translate_element" className="h-8 overflow-hidden rounded-lg flex items-center"></div>
             </div>
           </div>
           <button onClick={handleLogout} disabled={loggingOut} className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm flex justify-center items-center gap-2">

@@ -45,6 +45,13 @@
   }
 
   html { scroll-behavior: smooth; }
+  
+  /* Google Translate Overrides */
+  .goog-te-banner-frame.skiptranslate { display: none !important; }
+  body { top: 0px !important; }
+  .goog-te-gadget { color: transparent !important; font-size: 0px !important; }
+  .goog-te-gadget .goog-te-combo { margin: 0; padding: 4px; border-radius: 6px; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-base); outline: none; font-size: 12px; font-family: 'DM Sans', sans-serif; cursor: pointer; }
+
   body {
     background: var(--bg-base);
     color: var(--text-base);

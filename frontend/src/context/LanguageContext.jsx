@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 
 const LanguageContext = createContext()
 
@@ -100,113 +100,34 @@ export const translations = {
     closeBtn: 'Close',
     paymentHistoryFor: 'Payment History for',
     noHistoryFound: 'No history found for this customer.',
-  },
-  te: {
-    // Auth
-    loginTitle: 'లాగిన్',
-    loginBtn: 'లాగిన్ చేయండి',
-    username: 'వాడుకరిపేరు',
-    password: 'పాస్‌వర్డ్',
-    loginSuccess: 'విజయవంతంగా లాగిన్ అయ్యారు',
-    loginFailed: 'లాగిన్ విఫలమైంది',
-    // Nav
-    dashboard: 'డాష్‌బోర్డ్',
-    customers: 'కస్టమర్లు',
-    payments: 'చెల్లింపులు',
-    importCSV: 'దిగుమతి CSV',
-    logout: 'లాగ్అవుట్',
-    // Dashboard
-    totalCustomers: 'మొత్తం కస్టమర్లు',
-    toReceive: 'అందుకోవాల్సింది',
-    todaysIncome: 'నేటి ఆదాయం',
-    monthlyIncome: 'నెలవారీ ఆదాయం',
-    paid: 'చెల్లించారు',
-    unpaid: 'చెల్లించలేదు',
-    partial: 'పాక్షికం',
-    activeSubscriptions: 'క్రియాశీల సభ్యత్వాలు',
-    needToCollect: 'వసూలు చేయాలి',
-    balancePending: 'బకాయి పెండింగ్',
-    incomeThisMonth: 'ఈ నెల ఆదాయం',
-    expiringIn7Days: '7 రోజుల్లో గడువు',
-    collectionProgress: 'వసూలు పురోగతి',
-    collected: 'వసూలైంది',
-    allGood: 'అంతా సరిగ్గా ఉంది 👍',
-    noPayments: 'ఇంకా చెల్లింపులు నమోదు కాలేదు',
-    resetDashboard: 'డాష్‌బోర్డ్ రీసెట్',
-    resetConfirm: 'ఇది అన్ని కస్టమర్లను UNPAID గా మార్చి చెల్లింపు చరిత్రను తొలగిస్తుంది. మీరు ఖచ్చితంగా ఉన్నారా?',
-    resetSuccess: 'డాష్‌బోర్డ్ విజయవంతంగా రీసెట్ అయింది',
-    // Customers
-    addCustomer: 'కస్టమర్ జోడించు',
-    totalRecords: 'మొత్తం రికార్డులు',
-    searchPlaceholder: 'పేరు, CAF నంబర్ లేదా ఫోన్ ద్వారా వెతకండి...',
-    name: 'పేరు',
-    cafNumber: 'CAF నంబర్',
-    phone: 'ఫోన్',
-    address: 'చిరునామా',
-    plan: 'ప్లాన్ (₹)',
-    status: 'స్థితి',
-    paidOn: 'చెల్లించిన తేదీ',
-    validTill: 'చెల్లుబాటు వరకు',
-    balance: 'బకాయి',
-    actions: 'చర్యలు',
-    pay: 'చెల్లింపు',
-    noCustomers: 'కస్టమర్లు కనుగొనబడలేదు',
-    // Payment Modal
-    paymentType: 'చెల్లింపు రకం',
-    fullPaid: 'పూర్తిగా చెల్లించారు',
-    monthsPaid: 'నెలలు చెల్లించారు',
-    amountPaid: 'చెల్లించిన మొత్తం',
-    notes: 'గమనికలు (ఐచ్ఛికం)',
-    notesPlaceholder: 'ఉదా. UPI ద్వారా చెల్లించారు',
-    cancel: 'రద్దు',
-    confirm: 'నిర్ధారించు',
-    carryOver: 'గత నెల నుండి బకాయి',
-    carryOverNext: 'వచ్చే నెల బకాయి',
-    // Import
-    importCustomers: 'కస్టమర్లను దిగుమతి చేయండి',
-    uploadSubtitle: 'APSFL ఎగుమతి అప్‌లోడ్ చేయండి — CSV, Excel, లేదా TXT',
-    expectedColumns: 'అవసరమైన కాలమ్‌లు',
-    dropFile: 'ఫైల్‌ను ఇక్కడ వదలండి లేదా బ్రౌజ్ చేయడానికి క్లిక్ చేయండి',
-    importing: 'దిగుమతి అవుతోంది...',
-    importBtn: '⬆️  కస్టమర్లను దిగుమతి చేయండి',
-    importResult: 'దిగుమతి ఫలితం',
-    totalRows: 'మొత్తం వరుసలు',
-    imported: 'దిగుమతి అయ్యాయి',
-    skipped: 'దాటవేయబడ్డాయి',
-    howToExport: 'APSFL నుండి ఎలా ఎగుమతి చేయాలి',
-    // Payments
-    paymentHistory: 'చెల్లింపు చరిత్ర',
-    type: 'రకం',
-    amount: 'మొత్తం',
-    months: 'నెలలు',
-    customer: 'కస్టమర్',
-    from: 'నుండి',
-    to: 'వరకు',
-    filter: 'వడపోత',
-    clear: 'తుడవండి',
-    total: 'మొత్తం',
-    noPaymentRecords: 'చెల్లింపు రికార్డులు కనుగొనబడలేదు',
-    // Add Customer
-    customerName: 'కస్టమర్ పేరు *',
-    cafNumberLabel: 'CAF నంబర్ *',
-    phoneNumber: 'ఫోన్ నంబర్',
-    monthlyPlan: 'నెలవారీ ప్లాన్ మొత్తం (₹)',
-    notesLabel: 'గమనికలు',
-    adding: 'జోడిస్తోంది...',
-    addBtn: 'కస్టమర్ జోడించు',
-    paidThisMonth: '% ఈ నెల చెల్లించారు',
-    closeBtn: 'మూసివేయు',
-    paymentHistoryFor: 'చెల్లింపు చరిత్ర -',
-    noHistoryFound: 'ఈ కస్టమర్‌కు చరిత్ర లేదు.',
   }
 }
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState('en')
-  const t = (key) => translations[lang][key] || translations['en'][key] || key
-  const toggleLang = () => setLang(l => l === 'en' ? 'te' : 'en')
+  const t = (key) => translations['en'][key] || key
+
+  useEffect(() => {
+    if (window.googleTranslateElementInit) return
+    
+    window.googleTranslateElementInit = () => {
+      new window.google.translate.TranslateElement(
+        { 
+          pageLanguage: 'en',
+          includedLanguages: 'en,te,hi,ta,kn,ml,mr,gu,bn',
+          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE 
+        },
+        'google_translate_element'
+      )
+    }
+
+    const script = document.createElement('script')
+    script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
+    script.async = true
+    document.body.appendChild(script)
+  }, [])
+
   return (
-    <LanguageContext.Provider value={{ lang, toggleLang, t }}>
+    <LanguageContext.Provider value={{ t }}>
       {children}
     </LanguageContext.Provider>
   )

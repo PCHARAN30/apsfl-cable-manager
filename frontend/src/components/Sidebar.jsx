@@ -9,7 +9,7 @@ const NAV = [
 ]
 
 export default function Sidebar({ open, onClose }) {
-  const { t, lang, toggleLang } = useLang()
+  const { t } = useLang()
 
   return (
     <aside className={`
@@ -69,12 +69,8 @@ export default function Sidebar({ open, onClose }) {
         ))}
       </nav>
 
-      {/* Language toggle + footer */}
+      {/* Footer */}
       <div className="px-4 pb-4 space-y-3" style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-        <button onClick={toggleLang} className="lang-btn w-full justify-center">
-          <span style={{ fontSize: 14 }}>{lang === 'en' ? '🇮🇳' : '🇬🇧'}</span>
-          {lang === 'en' ? 'తెలుగు లో చూడండి' : 'Switch to English'}
-        </button>
         <p style={{ fontSize: 11, color: 'var(--text-dim)', textAlign: 'center', fontFamily: 'JetBrains Mono, monospace' }}>v1.0.0</p>
       </div>
     </aside>
