@@ -2,10 +2,26 @@ const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    let mongoURI;
+
+    // Auto-detect environment and assign the correct URI
+    if (process.env.NODE_ENV === "production") {
+      mongoURI = process.env.MONGO_URI_ATLAS;
+      console.log("🌍 Using MongoDB Atlas (Production)");
+    } else {
+      mongoURI = process.env.MONGO_URI_LOCAL || "mongodb://127.0.0.1:27017/apsfl_cable_manager";
+      console.log("💻 Using Local MongoDB (Development)");
+    }
+
+    if (!mongoURI) {
+      throw new Error("MongoDB URI is not defined in environment variables.");
+    }
+
+    await mongoose.connect(mongoURI);
+
+    console.log("✅ MongoDB Connected");
   } catch (error) {
-    console.error("❌ MongoDB Connection Error:", error);
+    console.error("❌ DB Connection Error:", error.message);
     process.exit(1);
   }
 };
