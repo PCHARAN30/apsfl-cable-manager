@@ -30,11 +30,13 @@ export default function Customers() {
   const [addModal, setAddModal]   = useState(false)
   const [historyModal, setHistoryModal] = useState(null)
   const [deleting, setDeleting]   = useState(null)
+  const [page, setPage]           = useState(1)
+  const limit = 50
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const params = { limit:300 }
+      const params = { limit, page }
       if (search) params.search = search
       if (statusFilter !== 'ALL') params.status = statusFilter
       const res = await getCustomers(params)
@@ -42,7 +44,7 @@ export default function Customers() {
       setTotal(res.data.total)
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }
-  }, [search, statusFilter])
+  }, [search, statusFilter, page])
 
   useEffect(() => { const t = setTimeout(load, 300); return ()=>clearTimeout(t) }, [load])
 
@@ -84,11 +86,11 @@ export default function Customers() {
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder={t('searchPlaceholder')}
-            value={search} onChange={e=>setSearch(e.target.value)} />
+          value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
         </div>
         <div className="flex overflow-x-auto gap-2 p-1.5 bg-[var(--surface2)] border border-[var(--border-color)] rounded-xl backdrop-blur-md">
           {TABS.map(s => (
-            <button key={s} onClick={()=>setStatus(s)}
+          <button key={s} onClick={()=>{setStatus(s); setPage(1)}}
               className={`px-4 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all duration-200 ${statusFilter===s ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20' : 'text-[var(--text-muted)] hover:bg-[var(--border-color)] border border-transparent'}`}
             >
               {s}
@@ -123,7 +125,7 @@ export default function Customers() {
                 const expiring = days !== null && days <= 5 && days > 0 && c.status !== 'UNPAID'
                 return (
                   <tr key={c._id} className="tbl-row" style={expiring ? { background:'rgba(245,158,11,0.04)' } : {}}>
-                    <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{idx+1}</td>
+                    <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + idx + 1}</td>
                     <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>
                       {c.name}
                       {expiring && <span style={{ marginLeft:6, fontSize:11, color:'#fbbf24', fontFamily:'JetBrains Mono,monospace' }}>⚠{days}d</span>}
@@ -177,6 +179,19 @@ export default function Customers() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {total > limit && (
+          <div className="p-4 border-t border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
+            <span style={{ fontSize:13, color:'var(--text-muted)' }}>
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
+            </span>
+            <div className="flex gap-2">
+              <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
+              <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
