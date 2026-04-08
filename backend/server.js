@@ -75,7 +75,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   await connectDB(); // Block server startup until DB is successfully connected
   app.listen(PORT, () => {
-    console.log(`🚀 APSFL Backend running on http://localhost:${PORT}`);
+    console.log(`🚀 APSFL Backend running on :${PORT}`);
     startCronJobs();
   });
 };
