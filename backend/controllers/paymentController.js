@@ -55,7 +55,8 @@ exports.markPayment = async (req, res) => {
     }
 
     const now = new Date();
-    let baseDate = customer.validTill || now;
+    // Base calculations on their connection origin if validTill is completely empty (e.g., first payment)
+    let baseDate = customer.validTill || customer.connectionDate || customer.createdAt || now;
     
     if (monthsToAdvance > 0) {
       customer.validTill = calcValidTill(baseDate, monthsToAdvance);
@@ -143,7 +144,7 @@ exports.deletePayment = async (req, res) => {
     customer.status = 'UNPAID';
     customer.partialAmountPaid = 0;
     customer.carryOver = 0;
-    customer.validTill = customer.connectionDate || customer.createdAt || new Date();
+    customer.validTill = customer.connectionDate || customer.createdAt || null;
     customer.lastPaymentDate = null;
 
     const planAmount = customer.planAmount || 300;
@@ -173,7 +174,7 @@ exports.deletePayment = async (req, res) => {
         }
       }
 
-      let baseDate = customer.validTill || new Date();
+      let baseDate = customer.validTill || payment.paymentDate || new Date();
       if (monthsToAdvance > 0) {
         customer.validTill = calcValidTill(baseDate, monthsToAdvance);
       }

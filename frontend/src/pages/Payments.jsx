@@ -12,11 +12,13 @@ export default function Payments() {
   const [loading, setLoading]   = useState(true)
   const [from, setFrom]         = useState('')
   const [to, setTo]             = useState('')
+  const [page, setPage]         = useState(1)
+  const limit = 50
 
   const load = async () => {
     setLoading(true)
     try {
-      const params = { limit:200 }
+      const params = { limit, page }
       if (from) params.from = from
       if (to)   params.to   = to
       const res = await getAllPayments(params)
@@ -25,7 +27,7 @@ export default function Payments() {
     finally { setLoading(false) }
   }
 
-  useEffect(()=>{ load() }, [])
+  useEffect(()=>{ load() }, [page])
 
   const handleDelete = async (p) => {
     if (!window.confirm(`Delete payment of ₹${p.amountPaid} for ${p.customerName}?\n\nThis will recalculate the customer's balance.`)) return
@@ -60,8 +62,8 @@ export default function Payments() {
           <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('to')}</label>
           <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
         </div>
-        <button onClick={load} className="btn-primary">{t('filter')}</button>
-        {(from||to) && <button onClick={()=>{ setFrom(''); setTo(''); setTimeout(load,100) }} className="btn-secondary">{t('clear')}</button>}
+        <button onClick={()=>{ setPage(1); load() }} className="btn-primary">{t('filter')}</button>
+        {(from||to) && <button onClick={()=>{ setFrom(''); setTo(''); setPage(1); setTimeout(load,100) }} className="btn-secondary">{t('clear')}</button>}
       </div>
 
       {/* Table */}
@@ -87,7 +89,7 @@ export default function Payments() {
                 </td></tr>
               ) : payments.map((p,i)=>(
                 <tr key={p._id} className="tbl-row">
-                  <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{i+1}</td>
+                  <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + i + 1}</td>
                   <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>{p.customerName}</td>
                   <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{p.cafNumber}</td>
                   <td className="tbl-cell">
@@ -116,6 +118,19 @@ export default function Payments() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {total > limit && (
+          <div className="p-4 border-t border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
+            <span style={{ fontSize:13, color:'var(--text-muted)' }}>
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
+            </span>
+            <div className="flex gap-2">
+              <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
+              <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

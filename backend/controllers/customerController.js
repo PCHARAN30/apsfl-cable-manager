@@ -91,7 +91,9 @@ exports.getCustomerById = async (req, res) => {
 /** POST /api/customers  — create single customer manually */
 exports.createCustomer = async (req, res) => {
   try {
-    const { name, phone, address, cafNumber, planAmount, notes, connectionDate } = req.body;
+    let { name, phone, address, cafNumber, planAmount, notes, connectionDate } = req.body;
+    if (!connectionDate) connectionDate = null; // Prevent CastError for empty string
+    
     if (!name || !cafNumber) {
       return res.status(400).json({ success: false, message: "Name and CAF Number are required" });
     }
@@ -112,6 +114,8 @@ exports.createCustomer = async (req, res) => {
 exports.updateCustomer = async (req, res) => {
   try {
     const updates = (({ name, phone, address, planAmount, notes, connectionDate }) => ({ name, phone, address, planAmount, notes, connectionDate }))(req.body);
+    if (!updates.connectionDate) updates.connectionDate = null; // Prevent CastError
+    
     const customer = await Customer.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,

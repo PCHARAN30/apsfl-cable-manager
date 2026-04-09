@@ -16,6 +16,11 @@ const en = {
     payments: 'Payments',
     importCSV: 'Import CSV',
     logout: 'Logout',
+    searchCAF: 'Search CAF',
+    collection: 'Collection',
+    reports: 'Reports',
+    inventory: 'Inventory (CPE)',
+    services: 'Services',
     // Dashboard
     totalCustomers: 'Total Customers',
     toReceive: 'To Receive',
