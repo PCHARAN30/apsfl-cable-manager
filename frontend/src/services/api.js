@@ -42,6 +42,7 @@ export const importCustomers = (formData) =>
 export const markPayment = (customerId, data) => api.post(`/payments/mark/${customerId}`, data)
 export const markUnpaid  = (customerId) => api.post(`/payments/unpaid/${customerId}`)
 export const getPaymentHistory = (customerId) => api.get(`/payments/history/${customerId}`)
+export const deletePayment = (paymentId) => api.delete(`/payments/${paymentId}`)
 export const getAllPayments = (params) => api.get('/payments/all', { params })
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────

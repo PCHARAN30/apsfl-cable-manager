@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getAllPayments } from '../services/api'
+import { getAllPayments, deletePayment } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 
@@ -26,6 +26,15 @@ export default function Payments() {
   }
 
   useEffect(()=>{ load() }, [])
+
+  const handleDelete = async (p) => {
+    if (!window.confirm(`Delete payment of ₹${p.amountPaid} for ${p.customerName}?\n\nThis will recalculate the customer's balance.`)) return
+    try {
+      await deletePayment(p._id)
+      toast.success('Payment deleted')
+      load()
+    } catch (err) { toast.error(err.response?.data?.message || 'Delete failed') }
+  }
 
   const totalAmt = payments.reduce((s,p)=>s+p.amountPaid, 0)
 
@@ -61,7 +70,7 @@ export default function Payments() {
           <table className="tbl">
             <thead>
               <tr className="tbl-head-row">
-                {['#',t('customer'),'CAF',t('type'),t('amount'),t('months'),t('validTill'),t('paidOn'),t('notes')]
+                {['#',t('customer'),'CAF',t('type'),t('amount'),t('months'),t('validTill'),t('paidOn'),t('notes'), t('actions')]
                   .map((h,i)=><th key={i} className="tbl-head">{h}</th>)}
               </tr>
             </thead>
@@ -69,11 +78,11 @@ export default function Payments() {
               {loading ? (
                 [...Array(5)].map((_,i)=>(
                   <tr key={i} className="tbl-row">
-                    {[...Array(9)].map((_,j)=><td key={j} className="tbl-cell"><div className="skeleton h-4 w-16 rounded"/></td>)}
+                    {[...Array(10)].map((_,j)=><td key={j} className="tbl-cell"><div className="skeleton h-4 w-16 rounded"/></td>)}
                   </tr>
                 ))
               ) : payments.length === 0 ? (
-                <tr><td colSpan={9} style={{ textAlign:'center', padding:'64px 0', color:'var(--text-muted)', fontSize:14 }}>
+                <tr><td colSpan={10} style={{ textAlign:'center', padding:'64px 0', color:'var(--text-muted)', fontSize:14 }}>
                   {t('noPaymentRecords')}
                 </td></tr>
               ) : payments.map((p,i)=>(
@@ -93,6 +102,15 @@ export default function Payments() {
                   </td>
                   <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{fmtDate(p.paymentDate)}</td>
                   <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{p.notes||'NA'}</td>
+                  <td className="tbl-cell">
+                    <button onClick={()=>handleDelete(p)}
+                      style={{ padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'none', color:'var(--text-muted)', transition:'color 0.15s' }}
+                      onMouseEnter={e=>e.target.style.color='#f87171'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'} title="Delete Payment">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+                      </svg>
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

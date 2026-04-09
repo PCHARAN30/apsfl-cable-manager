@@ -17,7 +17,6 @@ export default function Layout({ user, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileModal, setProfileModal] = useState(false)
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
-  const [isTelugu, setIsTelugu] = useState(false)
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark')
@@ -26,34 +25,6 @@ export default function Layout({ user, onLogout, children }) {
   }, [theme])
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
-
-  const handleTranslateToggle = () => {
-    const combo = document.querySelector('.goog-te-combo');
-    if (combo) {
-      combo.value = isTelugu ? 'en' : 'te';
-      combo.dispatchEvent(new Event('change', { bubbles: true }));
-      setIsTelugu(!isTelugu);
-      return;
-    }
-
-    // If not ready, poll for a few seconds before giving up.
-    const toastId = toast.loading('Initializing translator...');
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      const combo = document.querySelector('.goog-te-combo');
-      if (combo) {
-        clearInterval(interval);
-        toast.dismiss(toastId);
-        combo.value = isTelugu ? 'en' : 'te';
-        combo.dispatchEvent(new Event('change', { bubbles: true }));
-        setIsTelugu(!isTelugu);
-      } else if (attempts > 6) { // ~3 seconds
-        clearInterval(interval);
-        toast.error('Translation service failed to load.', { id: toastId });
-      }
-    }, 500);
-  };
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -125,28 +96,21 @@ export default function Layout({ user, onLogout, children }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-[var(--border-color)] flex flex-col gap-4 bg-[var(--surface2)]">
-          <div className="flex items-center justify-between px-2">
+        <div className="p-4 border-t border-[var(--border-color)] flex flex-col gap-3 bg-[var(--surface2)]">
+          <div className="flex items-center justify-between px-2 mb-1">
             <button onClick={() => setProfileModal(true)} className="text-sm font-medium text-[var(--text-base)] hover:opacity-80 transition-colors flex items-center gap-1.5 outline-none">
               {user?.username}
               <svg className="w-3.5 h-3.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </button>
-            <div className="flex items-center gap-2">
-              <button onClick={toggleTheme} className="bg-[var(--glass-bg)] hover:opacity-80 transition-opacity border border-[var(--border-color)] text-[var(--text-base)] px-2.5 py-1.5 rounded-lg text-xs font-bold shadow-sm">
-                {theme === 'dark' ? '☀️' : '🌙'}
-              </button>
-              <button 
-                onClick={handleTranslateToggle}
-                className="bg-[var(--glass-bg)] hover:opacity-80 transition-opacity border border-[var(--border-color)] text-[var(--text-base)] px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm"
-              >
-                {isTelugu ? 'English' : 'Telugu'}
-              </button>
-              <div id="google_translate_element" className="hidden"></div>
-            </div>
           </div>
-          <button onClick={handleLogout} disabled={loggingOut} className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm flex justify-center items-center gap-2">
+
+          <button onClick={toggleTheme} className="w-full py-2.5 bg-[var(--glass-bg)] hover:opacity-80 transition-all border border-[var(--border-color)] text-[var(--text-base)] rounded-xl text-sm font-semibold shadow-sm flex items-center justify-center gap-2">
+            {theme === 'dark' ? '☀️ Switch to Light Mode' : '🌙 Switch to Dark Mode'}
+          </button>
+
+          <button onClick={handleLogout} disabled={loggingOut} className="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm flex justify-center items-center gap-2">
             {loggingOut ? '...' : t('logout')}
           </button>
         </div>

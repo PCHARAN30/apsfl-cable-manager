@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect } from 'react'
+import { createContext, useContext } from 'react'
 
 const LanguageContext = createContext()
 
-export const translations = {
-  en: {
+const en = {
     // Auth
     loginTitle: 'Login',
     loginBtn: 'Login',
@@ -105,31 +104,10 @@ export const translations = {
     saveChanges: 'Save Changes',
     updating: 'Updating...',
     edit: 'Edit',
-  }
 }
 
 export function LanguageProvider({ children }) {
-  const t = (key) => translations['en'][key] || key
-
-  useEffect(() => {
-    if (window.googleTranslateElementInit) return
-    
-    window.googleTranslateElementInit = () => {
-      new window.google.translate.TranslateElement(
-        { 
-          pageLanguage: 'en',
-          includedLanguages: 'en,te,hi,ta,kn,ml,mr,gu,bn',
-          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE 
-        },
-        'google_translate_element'
-      )
-    }
-
-    const script = document.createElement('script')
-    script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit'
-    script.async = true
-    document.body.appendChild(script)
-  }, [])
+  const t = (key) => en[key] || key
 
   return (
     <LanguageContext.Provider value={{ t }}>

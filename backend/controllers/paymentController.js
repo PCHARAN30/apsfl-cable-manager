@@ -16,65 +16,80 @@ const calcValidTill = (baseDate, planMonths = 1) => {
 exports.markPayment = async (req, res) => {
   try {
     const { customerId } = req.params;
-    const {
-      paymentType = "FULL",
-      amountPaid,
-      planMonths = 1,
-      notes = "",
-    } = req.body;
+    const { amountPaid, notes = "" } = req.body;
 
     const customer = await Customer.findById(customerId);
     if (!customer) {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
 
-    if (!amountPaid || amountPaid <= 0) {
+    if (!amountPaid || Number(amountPaid) <= 0) {
       return res.status(400).json({ success: false, message: "amountPaid must be > 0" });
     }
 
-    const now = new Date();
-    const validFrom = now;
-    const validTill = calcValidTill(now, planMonths);
+    const planAmount = customer.planAmount || 300;
+    let funds = Number(amountPaid);
+    let debt = customer.carryOver || 0;
+    let monthsToAdvance = 0;
 
-    if (paymentType === "FULL") {
-      customer.status = "PAID";
-      customer.partialAmountPaid = 0;
-      customer.carryOver = 0;
-      customer.planMonths = planMonths;
-      customer.lastPaymentDate = now;
-      customer.validTill = validTill;
-    } else if (paymentType === "PARTIAL") {
-      const fullDue = customer.planAmount - (customer.carryOver || 0);
-      const remaining = fullDue - amountPaid;
-      customer.status = "PARTIAL";
-      customer.partialAmountPaid = amountPaid;
-      customer.carryOver = remaining > 0 ? remaining : 0;
-      customer.planMonths = 1;
-      customer.lastPaymentDate = now;
-      // Partial: still set validTill for 30 days but they owe balance
-      customer.validTill = validTill;
+    // FIFO Payment Distribution
+    if (funds < debt) {
+      // Partially paying off existing debt
+      customer.carryOver = debt - funds;
+      customer.partialAmountPaid = (customer.partialAmountPaid || 0) + funds;
+    } else {
+      // Clears current debt, allocate rest to future months
+      funds -= debt;
+      let fullMonths = Math.floor(funds / planAmount);
+      let remainder = funds % planAmount;
+      
+      monthsToAdvance = fullMonths;
+      if (remainder > 0) {
+        monthsToAdvance += 1;
+        customer.carryOver = planAmount - remainder;
+        customer.partialAmountPaid = remainder;
+      } else {
+        customer.carryOver = 0;
+        customer.partialAmountPaid = 0;
+      }
     }
 
+    const now = new Date();
+    let baseDate = customer.validTill || now;
+    
+    if (monthsToAdvance > 0) {
+      customer.validTill = calcValidTill(baseDate, monthsToAdvance);
+    }
+
+    // Status evaluation based on real-time balance & validity
+    if (customer.carryOver > 0) {
+      customer.status = "PARTIAL";
+    } else if (customer.validTill && customer.validTill < now) {
+      customer.status = "UNPAID";
+    } else {
+      customer.status = "PAID";
+    }
+
+    customer.lastPaymentDate = now;
     if (notes) customer.notes = notes;
     await customer.save();
 
-    // Save payment record
     const payment = await Payment.create({
       customer: customer._id,
       cafNumber: customer.cafNumber,
       customerName: customer.name,
-      amountPaid,
-      planMonths,
-      paymentType,
+      amountPaid: Number(amountPaid),
+      planMonths: monthsToAdvance || 1, // Metadata for history
+      paymentType: customer.carryOver > 0 ? "PARTIAL" : "FULL",
       paymentDate: now,
-      validFrom,
-      validTill,
+      validFrom: baseDate,
+      validTill: customer.validTill || baseDate,
       notes,
     });
 
     res.json({
       success: true,
-      message: `Marked as ${paymentType}`,
+      message: `Payment of ₹${amountPaid} recorded`,
       customer,
       payment,
     });
@@ -98,6 +113,75 @@ exports.markUnpaid = async (req, res) => {
 
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
     res.json({ success: true, data: customer });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/** DELETE /api/payments/:paymentId — delete a payment and recalculate customer state */
+exports.deletePayment = async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+
+    const paymentToDelete = await Payment.findById(paymentId);
+    if (!paymentToDelete) {
+      return res.status(404).json({ success: false, message: "Payment not found" });
+    }
+    const customerId = paymentToDelete.customer;
+
+    await Payment.findByIdAndDelete(paymentId);
+
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Associated customer not found" });
+    }
+
+    // Recalculate customer state from their remaining payments
+    const remainingPayments = await Payment.find({ customer: customerId }).sort({ paymentDate: 1 });
+
+    // Reset customer's financial state to their "factory settings"
+    customer.status = 'UNPAID';
+    customer.partialAmountPaid = 0;
+    customer.carryOver = 0;
+    customer.validTill = customer.connectionDate || customer.createdAt || new Date();
+    customer.lastPaymentDate = null;
+
+    const planAmount = customer.planAmount || 300;
+
+    // Re-apply FIFO logic for each remaining payment
+    for (const payment of remainingPayments) {
+      let funds = Number(payment.amountPaid);
+      let debt = customer.carryOver || 0;
+      let monthsToAdvance = 0;
+
+      if (funds < debt) {
+        customer.carryOver = debt - funds;
+        customer.partialAmountPaid = (customer.partialAmountPaid || 0) + funds;
+      } else {
+        funds -= debt;
+        let fullMonths = Math.floor(funds / planAmount);
+        let remainder = funds % planAmount;
+        
+        monthsToAdvance = fullMonths;
+        if (remainder > 0) {
+          monthsToAdvance += 1;
+          customer.carryOver = planAmount - remainder;
+          customer.partialAmountPaid = remainder;
+        } else {
+          customer.carryOver = 0;
+          customer.partialAmountPaid = 0;
+        }
+      }
+
+      let baseDate = customer.validTill || new Date();
+      if (monthsToAdvance > 0) {
+        customer.validTill = calcValidTill(baseDate, monthsToAdvance);
+      }
+      customer.lastPaymentDate = payment.paymentDate;
+    }
+
+    await customer.save();
+    res.json({ success: true, message: "Payment deleted and customer status recalculated." });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
