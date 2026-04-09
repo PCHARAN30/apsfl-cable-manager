@@ -154,15 +154,4 @@ Duplicate CAF numbers are **automatically skipped**.
 PORT=5000
 MONGO_URI=mongodb+srv://...
 NODE_ENV=development
-CLIENT_URL=http://localhost:5173
 ```
-
----
-
-## 🔮 Future Enhancements
-
-- [ ] WhatsApp notifications via Twilio (reminder before expiry)
-- [ ] Razorpay payment link generation
-- [ ] Multi-operator login (JWT auth)
-- [ ] Print monthly collection report (PDF)
-- [ ] Mobile-responsive PWA
