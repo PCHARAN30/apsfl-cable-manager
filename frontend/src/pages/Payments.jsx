@@ -89,10 +89,10 @@ export default function Payments() {
                   </td>
                   <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace' }}>{p.planMonths}</td>
                   <td className="tbl-cell" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace', color:'var(--text-muted)' }}>
-                    {p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : '—'}
+                    {p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'}
                   </td>
                   <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{fmtDate(p.paymentDate)}</td>
-                  <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{p.notes||'—'}</td>
+                  <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{p.notes||'NA'}</td>
                 </tr>
               ))}
             </tbody>

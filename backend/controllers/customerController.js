@@ -38,8 +38,14 @@ const normaliseRow = (row) => {
   const cafNumber = get(
     "caf", "cafnumber", "caf number", "caf no", "caf_number", "caf id"
   );
+  const connectionDateRaw = get("connection date", "join date", "date of connection", "connectiondate", "joindate");
+  let connectionDate = null;
+  if (connectionDateRaw) {
+    const parsed = new Date(connectionDateRaw);
+    if (!isNaN(parsed)) connectionDate = parsed;
+  }
 
-  return { name, phone, address, cafNumber };
+  return { name, phone, address, cafNumber, connectionDate };
 };
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
@@ -85,7 +91,7 @@ exports.getCustomerById = async (req, res) => {
 /** POST /api/customers  — create single customer manually */
 exports.createCustomer = async (req, res) => {
   try {
-    const { name, phone, address, cafNumber, planAmount, notes } = req.body;
+    const { name, phone, address, cafNumber, planAmount, notes, connectionDate } = req.body;
     if (!name || !cafNumber) {
       return res.status(400).json({ success: false, message: "Name and CAF Number are required" });
     }
@@ -95,7 +101,7 @@ exports.createCustomer = async (req, res) => {
       return res.status(409).json({ success: false, message: "CAF Number already exists" });
     }
 
-    const customer = await Customer.create({ name, phone, address, cafNumber, planAmount, notes });
+    const customer = await Customer.create({ name, phone, address, cafNumber, planAmount, notes, connectionDate });
     res.status(201).json({ success: true, data: customer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -105,7 +111,7 @@ exports.createCustomer = async (req, res) => {
 /** PUT /api/customers/:id  — update customer details */
 exports.updateCustomer = async (req, res) => {
   try {
-    const updates = (({ name, phone, address, planAmount, notes }) => ({ name, phone, address, planAmount, notes }))(req.body);
+    const updates = (({ name, phone, address, planAmount, notes, connectionDate }) => ({ name, phone, address, planAmount, notes, connectionDate }))(req.body);
     const customer = await Customer.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
@@ -165,7 +171,7 @@ exports.importCustomers = async (req, res) => {
     let errors = [];
 
     for (const row of rows) {
-      const { name, phone, address, cafNumber } = normaliseRow(row);
+      const { name, phone, address, cafNumber, connectionDate } = normaliseRow(row);
       if (!name || !cafNumber) {
         errors.push({ row, reason: "Missing name or CAF number" });
         skipped++;
@@ -175,7 +181,10 @@ exports.importCustomers = async (req, res) => {
       try {
         const result = await Customer.updateOne(
           { cafNumber: cafNumber.toUpperCase() },
-          { $setOnInsert: { name, phone, address, cafNumber: cafNumber.toUpperCase() } },
+          { $setOnInsert: { 
+            name, phone, address, cafNumber: cafNumber.toUpperCase(),
+            ...(connectionDate && { connectionDate })
+          } },
           { upsert: true }
         );
         

@@ -94,12 +94,17 @@ export const translations = {
     phoneNumber: 'Phone Number',
     monthlyPlan: 'Monthly Plan Amount (₹)',
     notesLabel: 'Notes',
+    connectionDate: 'Date of Connection',
     adding: 'Adding...',
     addBtn: 'Add Customer',
     paidThisMonth: '% paid this month',
     closeBtn: 'Close',
     paymentHistoryFor: 'Payment History for',
     noHistoryFound: 'No history found for this customer.',
+    editCustomer: 'Edit Customer',
+    saveChanges: 'Save Changes',
+    updating: 'Updating...',
+    edit: 'Edit',
   }
 }
 

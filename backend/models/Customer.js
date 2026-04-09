@@ -25,6 +25,12 @@ const customerSchema = new mongoose.Schema(
       uppercase: true,
     },
 
+    // --- Connection Date ---
+    connectionDate: {
+      type: Date,
+      default: null,
+    },
+
     // --- Plan & Amount ---
     planAmount: {
       type: Number,

@@ -5,8 +5,9 @@ import { useLang } from '../context/LanguageContext'
 import PaymentModal from '../components/PaymentModal'
 import AddCustomerModal from '../components/AddCustomerModal'
 import PaymentHistoryModal from '../components/PaymentHistoryModal'
+import EditCustomerModal from '../components/EditCustomerModal'
 
-const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : '—'
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'
 
 const StatusBadge = ({ status }) => {
   const cls = { PAID:'badge-paid', UNPAID:'badge-unpaid', PARTIAL:'badge-partial' }
@@ -28,6 +29,7 @@ export default function Customers() {
   const [statusFilter, setStatus] = useState('ALL')
   const [payModal, setPayModal]   = useState(null)
   const [addModal, setAddModal]   = useState(false)
+  const [editModal, setEditModal] = useState(null)
   const [historyModal, setHistoryModal] = useState(null)
   const [deleting, setDeleting]   = useState(null)
   const [page, setPage]           = useState(1)
@@ -127,12 +129,12 @@ export default function Customers() {
                   <tr key={c._id} className="tbl-row" style={expiring ? { background:'rgba(245,158,11,0.04)' } : {}}>
                     <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + idx + 1}</td>
                     <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>
-                      {c.name}
+                      {c.name} <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:'normal', marginLeft:4 }}>({c.cafNumber})</span>
                       {expiring && <span style={{ marginLeft:6, fontSize:11, color:'#fbbf24', fontFamily:'JetBrains Mono,monospace' }}>⚠{days}d</span>}
                     </td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{c.cafNumber}</td>
-                    <td className="tbl-cell">{c.phone||'—'}</td>
-                    <td className="tbl-cell" style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.address||'—'}</td>
+                    <td className="tbl-cell">{c.phone||'NA'}</td>
+                    <td className="tbl-cell" style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.address||'NA'}</td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', color:'var(--text-base)' }}>₹{c.planAmount||300}</td>
                     <td className="tbl-cell"><StatusBadge status={c.status}/></td>
                     <td className="tbl-cell" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>{fmtDate(c.lastPaymentDate)}</td>
@@ -140,7 +142,7 @@ export default function Customers() {
                       {fmtDate(c.validTill)}
                     </td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12, color:'#fbbf24' }}>
-                      {c.carryOver>0 ? `₹${c.carryOver}` : <span style={{ color:'var(--text-dim)' }}>—</span>}
+                      {c.carryOver>0 ? `₹${c.carryOver}` : <span style={{ color:'var(--text-dim)' }}>NA</span>}
                     </td>
                     <td className="tbl-cell">
                       <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -150,20 +152,18 @@ export default function Customers() {
                             transition:'all 0.15s' }}>
                           {t('pay')}
                         </button>
+                        <button onClick={()=>setEditModal(c)}
+                          style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
+                            background:'rgba(245,158,11,0.1)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.2)',
+                            transition:'all 0.15s' }}>
+                          {t('edit')}
+                        </button>
                         <button onClick={()=>setHistoryModal(c)}
                           style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
                             background:'rgba(59,130,246,0.1)', color:'#60a5fa', border:'1px solid rgba(59,130,246,0.2)',
                             transition:'all 0.15s' }}>
                           View
                         </button>
-                        {c.status !== 'UNPAID' && (
-                          <button onClick={()=>handleMarkUnpaid(c)}
-                            style={{ padding:'5px 10px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
-                              background:'rgba(239,68,68,0.1)', color:'#f87171', border:'1px solid rgba(239,68,68,0.2)',
-                              transition:'all 0.15s' }}>
-                            {t('unpaid')}
-                          </button>
-                        )}
                         <button onClick={()=>handleDelete(c)} disabled={deleting===c._id}
                           style={{ padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'none', color:'var(--text-muted)', transition:'color 0.15s' }}
                           onMouseEnter={e=>e.target.style.color='#f87171'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'}>
@@ -196,6 +196,7 @@ export default function Customers() {
 
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
       {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={load}/>}
+      {editModal && <EditCustomerModal customer={editModal} onClose={()=>setEditModal(null)} onSuccess={load}/>}
       <PaymentHistoryModal 
         isOpen={!!historyModal} 
         onClose={() => setHistoryModal(null)} 

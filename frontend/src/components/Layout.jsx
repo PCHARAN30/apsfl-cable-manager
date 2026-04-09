@@ -28,15 +28,32 @@ export default function Layout({ user, onLogout, children }) {
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   const handleTranslateToggle = () => {
-    const combo = document.querySelector('.goog-te-combo')
+    const combo = document.querySelector('.goog-te-combo');
     if (combo) {
-      combo.value = isTelugu ? 'en' : 'te'
-      combo.dispatchEvent(new Event('change', { bubbles: true }))
-      setIsTelugu(!isTelugu)
-    } else {
-      toast.error('Translator is still loading. Please wait...')
+      combo.value = isTelugu ? 'en' : 'te';
+      combo.dispatchEvent(new Event('change', { bubbles: true }));
+      setIsTelugu(!isTelugu);
+      return;
     }
-  }
+
+    // If not ready, poll for a few seconds before giving up.
+    const toastId = toast.loading('Initializing translator...');
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      const combo = document.querySelector('.goog-te-combo');
+      if (combo) {
+        clearInterval(interval);
+        toast.dismiss(toastId);
+        combo.value = isTelugu ? 'en' : 'te';
+        combo.dispatchEvent(new Event('change', { bubbles: true }));
+        setIsTelugu(!isTelugu);
+      } else if (attempts > 6) { // ~3 seconds
+        clearInterval(interval);
+        toast.error('Translation service failed to load.', { id: toastId });
+      }
+    }, 500);
+  };
 
   const handleLogout = async () => {
     setLoggingOut(true)

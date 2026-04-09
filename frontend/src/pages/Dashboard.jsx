@@ -50,10 +50,14 @@ export default function Dashboard() {
   const partial = stats?.partialCount || 0
   const total   = stats?.totalCustomers || 0
   const paidPct = total ? Math.round((paid/total)*100) : 0
+  
+  const unpaidToReceive = stats?.unpaidToReceive || 0;
+  const partialToReceive = stats?.partialToReceive || 0;
+  const toReceiveTooltip = `${unpaid} unpaid customers: ${fmt(unpaidToReceive)}\n${partial} partial customers: ${fmt(partialToReceive)}`;
 
   const topCards = [
     { label: t('totalCustomers'), value: total,                     color: '#3b82f6', icon: IcoUsers,  sub: `${paidPct}${t('paidThisMonth')}` },
-    { label: t('toReceive'),      value: fmt(stats?.totalToReceive), color: '#ef4444', icon: IcoAlert, sub: `${unpaid} unpaid + ${partial} partial` },
+    { label: t('toReceive'),      value: fmt(stats?.totalToReceive), color: '#ef4444', icon: IcoAlert, sub: `${unpaid} unpaid + ${partial} partial`, tooltip: toReceiveTooltip },
     { label: t('todaysIncome'),   value: fmt(stats?.dailyIncome),    color: '#15b070', icon: IcoCoins, sub: new Date().toLocaleDateString('en-IN') },
     { label: t('monthlyIncome'),  value: fmt(stats?.monthlyIncome),  color: '#a855f7', icon: IcoChart, sub: new Date().toLocaleString('en-IN',{month:'long'}) },
   ]
@@ -84,7 +88,7 @@ export default function Dashboard() {
       {/* Top stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
         {topCards.map((c, i) => (
-          <div key={i} className={`p-5 rounded-2xl glass-panel fade-up stagger-${i+1}`}>
+          <div key={i} className={`p-5 rounded-2xl glass-panel fade-up stagger-${i+1}`} title={c.tooltip}>
             <div className="flex items-start justify-between mb-3">
               <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)' }}>{c.label}</p>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:`${c.color}18` }}>

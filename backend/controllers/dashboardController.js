@@ -60,10 +60,10 @@ exports.getDashboardStats = async (req, res) => {
       }),
     ]);
 
-    // Total to receive = all unpaid planAmount + partial carry-overs
-    const totalToReceive =
-      unpaidCustomers.reduce((sum, c) => sum + (c.planAmount || 300), 0) +
-      partialCustomers.reduce((sum, c) => sum + (c.carryOver || 0), 0);
+    // Calculate breakdown for "To Receive" amount
+    const unpaidToReceive = unpaidCustomers.reduce((sum, c) => sum + (c.planAmount || 300), 0);
+    const partialToReceive = partialCustomers.reduce((sum, c) => sum + (c.carryOver || 0), 0);
+    const totalToReceive = unpaidToReceive + partialToReceive;
 
     const dailyIncome = todayPayments[0]?.total || 0;
     const monthlyIncome = monthPayments[0]?.total || 0;
@@ -76,6 +76,8 @@ exports.getDashboardStats = async (req, res) => {
         unpaidCount,
         partialCount,
         totalToReceive,
+        unpaidToReceive,
+        partialToReceive,
         dailyIncome,
         monthlyIncome,
         expiringSoon,
