@@ -6,14 +6,14 @@ import { useLang } from '../context/LanguageContext'
 export default function PaymentModal({ customer, onClose, onSuccess }) {
   const { t } = useLang()
   const [amount, setAmount] = useState(customer.planAmount || 300)
-  const [notes, setNotes]   = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('Cash')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
     if (!amount || Number(amount) <= 0) { toast.error('Enter a valid amount'); return }
     setLoading(true)
     try {
-      await markPayment(customer._id, { amountPaid:Number(amount), notes })
+      await markPayment(customer._id, { amountPaid:Number(amount), paymentMethod })
       toast.success('✅ Payment recorded successfully')
       onSuccess(); onClose()
     } catch (err) { toast.error(err.response?.data?.message || 'Payment failed') }
@@ -66,10 +66,15 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
             value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0" min="1"/>
         </div>
 
-        {/* Notes */}
+        {/* Payment Method */}
         <div style={{ marginBottom:20 }}>
-          <span style={S.label}>{t('notes')}</span>
-          <input className="input" value={notes} onChange={e=>setNotes(e.target.value)} placeholder={t('notesPlaceholder')}/>
+          <span style={S.label}>{t('paymentMethod') || 'Payment Method'}</span>
+          <select className="input" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} style={{ appearance: 'auto', cursor: 'pointer' }}>
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Card">Card</option>
+          </select>
         </div>
 
         <div style={{ display:'flex', gap:10 }}>

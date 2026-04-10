@@ -1,7 +1,36 @@
 import { useState, useEffect, useRef } from 'react'
 import { getCustomers } from '../services/api'
 import { useLang } from '../context/LanguageContext'
-import PaymentModal from '../components/PaymentModal'
+
+function ViewCustomerModal({ customer, onClose }) {
+  if (!customer) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
+      <div className="relative w-full max-w-[440px] p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in">
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+          <h2 style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:18, color:'var(--text-base)' }}>Customer Details</h2>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div className="space-y-4 text-sm">
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Name</span><div className="font-semibold text-[var(--text-base)]">{customer.name}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">CAF Number</span><div className="font-mono text-[var(--text-base)]">{customer.cafNumber}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Phone</span><div className="text-[var(--text-base)]">{customer.phone || 'NA'}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Address</span><div className="text-[var(--text-base)]">{customer.address || 'NA'}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Plan Amount</span><div className="font-mono text-[var(--text-base)]">₹{customer.planAmount || 300}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">PON Number</span><div className="font-mono text-[var(--text-base)]">{customer.ponNumber || 'NA'}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Connection Date</span><div className="text-[var(--text-base)]">{customer.connectionDate ? new Date(customer.connectionDate).toLocaleDateString() : 'NA'}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Notes</span><div className="text-[var(--text-base)]">{customer.notes || 'NA'}</div></div>
+        </div>
+        <div className="mt-8">
+          <button onClick={onClose} className="btn-secondary w-full">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const StatusBadge = ({ status }) => {
   const cls = { 
@@ -24,7 +53,7 @@ export default function SearchCAF() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
-  const [payModal, setPayModal] = useState(null)
+  const [viewModal, setViewModal] = useState(null)
   const inputRef = useRef(null)
 
   const fetchResults = async (searchQuery) => {
@@ -52,7 +81,7 @@ export default function SearchCAF() {
     <div className="page max-w-4xl mx-auto">
       <div className="fade-up text-center mb-8 mt-4">
         <h1 className="font-display font-extrabold text-3xl text-[var(--text-base)] mb-3 tracking-tight">Quick Search</h1>
-        <p className="text-[var(--text-muted)] text-sm">Enter a CAF number, phone number, or name to quickly log a payment.</p>
+        <p className="text-[var(--text-muted)] text-sm">Enter a CAF number, phone number, or name to view customer details.</p>
       </div>
 
       <div className="fade-up stagger-1 relative mb-8">
@@ -78,7 +107,7 @@ export default function SearchCAF() {
         ) : query && results.length === 0 ? (
           <div className="col-span-full text-center py-12 text-slate-500 bg-[var(--surface2)] border border-[var(--border-color)] rounded-2xl">No customers found matching "{query}"</div>
         ) : results.map(c => (
-          <div key={c._id} onClick={() => setPayModal(c)} className="bg-[var(--glass-bg)] border border-[var(--border-color)] p-5 rounded-2xl hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all cursor-pointer shadow-sm group">
+          <div key={c._id} onClick={() => setViewModal(c)} className="bg-[var(--glass-bg)] border border-[var(--border-color)] p-5 rounded-2xl hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all cursor-pointer shadow-sm group">
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-bold text-[var(--text-base)] text-lg group-hover:text-emerald-400 transition-colors">{c.name}</h3>
               <StatusBadge status={c.status} />
@@ -89,7 +118,7 @@ export default function SearchCAF() {
         ))}
       </div>
 
-      {payModal && <PaymentModal customer={payModal} onClose={() => setPayModal(null)} onSuccess={() => fetchResults(query)} />}
+      {viewModal && <ViewCustomerModal customer={viewModal} onClose={() => setViewModal(null)} />}
     </div>
   )
 }

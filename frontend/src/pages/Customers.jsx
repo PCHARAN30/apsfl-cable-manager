@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { getCustomers, markUnpaid, deleteCustomer } from '../services/api'
+import { getCustomers, markUnpaid, deleteCustomer, bulkDeleteCustomers, getPonStats, markUpToDate } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 import PaymentModal from '../components/PaymentModal'
 import AddCustomerModal from '../components/AddCustomerModal'
@@ -27,6 +27,8 @@ export default function Customers() {
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
   const [statusFilter, setStatus] = useState('ALL')
+  const [ponFilter, setPonFilter] = useState('')
+  const [availablePons, setAvailablePons] = useState([])
   const [payModal, setPayModal]   = useState(null)
   const [addModal, setAddModal]   = useState(false)
   const [editModal, setEditModal] = useState(null)
@@ -35,18 +37,29 @@ export default function Customers() {
   const [page, setPage]           = useState(1)
   const limit = 50
 
+  const [selectedIds, setSelectedIds] = useState([])
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    getPonStats()
+      .then(res => setAvailablePons(res.data.data.map(s => s._id)))
+      .catch(console.error)
+  }, [])
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const params = { limit, page }
       if (search) params.search = search
       if (statusFilter !== 'ALL') params.status = statusFilter
+      if (ponFilter) params.pon = ponFilter
       const res = await getCustomers(params)
       setCustomers(res.data.data)
       setTotal(res.data.total)
+      setSelectedIds([]) // Clear selection on page/filter change
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }
-  }, [search, statusFilter, page])
+  }, [search, statusFilter, ponFilter, page])
 
   useEffect(() => { const t = setTimeout(load, 300); return ()=>clearTimeout(t) }, [load])
 
@@ -61,6 +74,38 @@ export default function Customers() {
     try { await deleteCustomer(c._id); toast.success('Deleted'); load() }
     catch { toast.error('Delete failed') }
     finally { setDeleting(null) }
+  }
+
+  const handleUpToDate = async (c) => {
+    if (!window.confirm(`Mark ${c.name} as Up to Date?\n\nThis will automatically generate a settlement payment to mark all previous unpaid months as PAID up to today, without altering their original connection date.`)) return
+    try { await markUpToDate(c._id); toast.success('Marked Up to Date'); load() }
+    catch (err) { toast.error(err.response?.data?.message || 'Failed') }
+  }
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
+  }
+
+  const toggleSelectAll = (e) => {
+    if (e.target.checked) setSelectedIds(customers.map(c => c._id))
+    else setSelectedIds([])
+  }
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} selected customers?\nThis action and their associated payments cannot be undone.`)) {
+      return
+    }
+    setIsDeleting(true)
+    try {
+      await bulkDeleteCustomers({ ids: selectedIds })
+      toast.success(`${selectedIds.length} customers deleted successfully`)
+      setSelectedIds([])
+      load()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete customers')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const TABS = ['ALL','PAID','UNPAID','PARTIAL']
@@ -90,6 +135,26 @@ export default function Customers() {
           <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder={t('searchPlaceholder')}
           value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
         </div>
+        
+        {/* PON Filter Dropdown */}
+        <div className="relative">
+          <select
+            value={ponFilter}
+            onChange={(e) => { setPonFilter(e.target.value); setPage(1); }}
+            className="appearance-none h-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-medium shadow-inner"
+          >
+            <option value="">All PONs</option>
+            {availablePons.map(pon => (
+              <option key={pon} value={pon}>{pon}</option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
         <div className="flex overflow-x-auto gap-2 p-1.5 bg-[var(--surface2)] border border-[var(--border-color)] rounded-xl backdrop-blur-md">
           {TABS.map(s => (
           <button key={s} onClick={()=>{setStatus(s); setPage(1)}}
@@ -101,12 +166,36 @@ export default function Customers() {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fade-up flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-xl mt-6">
+          <span className="text-red-400 font-semibold text-sm pl-2">
+            {selectedIds.length} customers selected
+          </span>
+          <button 
+            onClick={handleBulkDelete} 
+            disabled={isDeleting}
+            className="btn-primary bg-red-500 hover:bg-red-600 text-white ml-auto border-none"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Selected'}
+          </button>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="fade-up stagger-2 mt-6 rounded-2xl glass-panel overflow-hidden">
+      <div className={`fade-up stagger-2 ${selectedIds.length > 0 ? 'mt-4' : 'mt-6'} rounded-2xl glass-panel overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="tbl">
             <thead>
               <tr className="tbl-head-row">
+                <th className="tbl-head" style={{ width: 40, textAlign: 'center' }}>
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                    onChange={toggleSelectAll}
+                    checked={customers.length > 0 && selectedIds.length === customers.length}
+                  />
+                </th>
                 {['#',t('name'),t('cafNumber'),t('phone'),t('address'),t('plan'),t('status'),t('paidOn'),t('validTill'),t('balance'),t('actions')]
                   .map((h,i) => <th key={i} className="tbl-head">{h}</th>)}
               </tr>
@@ -115,11 +204,12 @@ export default function Customers() {
               {loading ? (
                 [...Array(6)].map((_,i) => (
                   <tr key={i} className="tbl-row">
+                    <td className="tbl-cell"><div className="skeleton h-4 w-4 rounded mx-auto"/></td>
                     {[...Array(11)].map((_,j) => <td key={j} className="tbl-cell"><div className="skeleton h-4 w-16 rounded"/></td>)}
                   </tr>
                 ))
               ) : customers.length === 0 ? (
-                <tr><td colSpan={11} style={{ textAlign:'center', padding:'64px 0', color:'var(--text-muted)', fontSize:14 }}>
+                <tr><td colSpan={12} style={{ textAlign:'center', padding:'64px 0', color:'var(--text-muted)', fontSize:14 }}>
                   {t('noCustomers')}
                 </td></tr>
               ) : customers.map((c, idx) => {
@@ -127,6 +217,14 @@ export default function Customers() {
                 const expiring = days !== null && days <= 5 && days > 0 && c.status !== 'UNPAID'
                 return (
                   <tr key={c._id} className="tbl-row" style={expiring ? { background:'rgba(245,158,11,0.04)' } : {}}>
+                    <td className="tbl-cell" style={{ textAlign: 'center' }}>
+                      <input 
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                        checked={selectedIds.includes(c._id)}
+                        onChange={() => toggleSelect(c._id)}
+                      />
+                    </td>
                     <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + idx + 1}</td>
                     <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>
                       {c.name} <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:'normal', marginLeft:4 }}>({c.cafNumber})</span>
@@ -158,6 +256,12 @@ export default function Customers() {
                             transition:'all 0.15s' }}>
                           {t('edit')}
                         </button>
+                    <button onClick={()=>handleUpToDate(c)}
+                      style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
+                        background:'rgba(168,85,247,0.1)', color:'#a855f7', border:'1px solid rgba(168,85,247,0.2)',
+                        transition:'all 0.15s' }} title="Reset validity to today">
+                      {t('upToDate')}
+                    </button>
                         <button onClick={()=>setHistoryModal(c)}
                           style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
                             background:'rgba(59,130,246,0.1)', color:'#60a5fa', border:'1px solid rgba(59,130,246,0.2)',

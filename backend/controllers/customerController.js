@@ -3,6 +3,7 @@ const path = require("path");
 const csv = require("csv-parser");
 const XLSX = require("xlsx");
 const Customer = require("../models/Customer");
+const Payment = require("../models/Payment");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ const normaliseRow = (row) => {
   const name = get("name", "customer name", "customername", "subscriber name");
   const phone = get("phone", "mobile", "mobile number", "contact", "phone number");
   const address = get("address", "addr", "location", "area", "full address");
+  const ponNumber = get("pon", "pon number", "pon_number", "pon id");
   const cafNumber = get(
     "caf", "cafnumber", "caf number", "caf no", "caf_number", "caf id"
   );
@@ -45,7 +47,7 @@ const normaliseRow = (row) => {
     if (!isNaN(parsed)) connectionDate = parsed;
   }
 
-  return { name, phone, address, cafNumber, connectionDate };
+  return { name, phone, address, cafNumber, connectionDate, ponNumber };
 };
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
@@ -53,11 +55,15 @@ const normaliseRow = (row) => {
 /** GET /api/customers  — list with optional search + status filter */
 exports.getCustomers = async (req, res) => {
   try {
-    const { search, status, page = 1, limit = 100 } = req.query;
+    const { search, status, pon, page = 1, limit = 100 } = req.query;
     const query = {};
 
     if (status && ["PAID", "UNPAID", "PARTIAL"].includes(status.toUpperCase())) {
       query.status = status.toUpperCase();
+    }
+
+    if (pon) {
+      query.ponNumber = pon;
     }
 
     if (search) {
@@ -91,11 +97,21 @@ exports.getCustomerById = async (req, res) => {
 /** POST /api/customers  — create single customer manually */
 exports.createCustomer = async (req, res) => {
   try {
-    let { name, phone, address, cafNumber, planAmount, notes, connectionDate } = req.body;
+    let { name, phone, address, cafNumber, planAmount, notes, connectionDate, ponNumber } = req.body;
     if (!connectionDate) connectionDate = null; // Prevent CastError for empty string
     
     if (!name || !cafNumber) {
       return res.status(400).json({ success: false, message: "Name and CAF Number are required" });
+    }
+
+    if (ponNumber) {
+      if (!/^[a-zA-Z0-9-]+$/.test(ponNumber)) {
+        return res.status(400).json({ success: false, message: "PON Number must be alphanumeric (e.g., PON2, 2)" });
+      }
+      const count = await Customer.countDocuments({ ponNumber });
+      if (count >= 128) {
+        return res.status(400).json({ success: false, message: "PON is full (128 connections reached)" });
+      }
     }
 
     const existing = await Customer.findOne({ cafNumber: cafNumber.toUpperCase() });
@@ -103,7 +119,7 @@ exports.createCustomer = async (req, res) => {
       return res.status(409).json({ success: false, message: "CAF Number already exists" });
     }
 
-    const customer = await Customer.create({ name, phone, address, cafNumber, planAmount, notes, connectionDate });
+    const customer = await Customer.create({ name, phone, address, cafNumber, planAmount, notes, connectionDate, ponNumber });
     res.status(201).json({ success: true, data: customer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -113,9 +129,23 @@ exports.createCustomer = async (req, res) => {
 /** PUT /api/customers/:id  — update customer details */
 exports.updateCustomer = async (req, res) => {
   try {
-    const updates = (({ name, phone, address, planAmount, notes, connectionDate }) => ({ name, phone, address, planAmount, notes, connectionDate }))(req.body);
+    const updates = (({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber }) => ({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber }))(req.body);
     if (!updates.connectionDate) updates.connectionDate = null; // Prevent CastError
     
+    // PON capacity check if PON is being modified
+    if (updates.ponNumber) {
+      if (!/^[a-zA-Z0-9-]+$/.test(updates.ponNumber)) {
+        return res.status(400).json({ success: false, message: "PON Number must be alphanumeric (e.g., PON2, 2)" });
+      }
+      const existingCustomer = await Customer.findById(req.params.id);
+      if (existingCustomer && existingCustomer.ponNumber !== updates.ponNumber) {
+        const count = await Customer.countDocuments({ ponNumber: updates.ponNumber });
+        if (count >= 128) {
+          return res.status(400).json({ success: false, message: "PON is full (128 connections reached)" });
+        }
+      }
+    }
+
     const customer = await Customer.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
@@ -132,7 +162,11 @@ exports.deleteCustomer = async (req, res) => {
   try {
     const customer = await Customer.findByIdAndDelete(req.params.id);
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
-    res.json({ success: true, message: "Customer deleted" });
+    
+    // Safe cascading delete for data integrity
+    await Payment.deleteMany({ customer: req.params.id });
+    
+    res.json({ success: true, message: "Customer and associated payments deleted" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -175,7 +209,7 @@ exports.importCustomers = async (req, res) => {
     let errors = [];
 
     for (const row of rows) {
-      const { name, phone, address, cafNumber, connectionDate } = normaliseRow(row);
+      const { name, phone, address, cafNumber, connectionDate, ponNumber } = normaliseRow(row);
       if (!name || !cafNumber) {
         errors.push({ row, reason: "Missing name or CAF number" });
         skipped++;
@@ -187,7 +221,8 @@ exports.importCustomers = async (req, res) => {
           { cafNumber: cafNumber.toUpperCase() },
           { $setOnInsert: { 
             name, phone, address, cafNumber: cafNumber.toUpperCase(),
-            ...(connectionDate && { connectionDate })
+            ...(connectionDate && { connectionDate }),
+            ...(ponNumber && { ponNumber })
           } },
           { upsert: true }
         );
@@ -216,6 +251,37 @@ exports.importCustomers = async (req, res) => {
       skipped,
       errors: errors.slice(0, 20), // return first 20 errors only
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/** POST /api/customers/bulk-delete  — bulk delete customers */
+exports.bulkDeleteCustomers = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: "No IDs provided" });
+    }
+    // Safe cascading delete
+    await Payment.deleteMany({ customer: { $in: ids } });
+    await Customer.deleteMany({ _id: { $in: ids } });
+    
+    res.json({ success: true, message: "Customers and associated payments deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/** GET /api/customers/pon-stats  — get aggregation of PON capacity */
+exports.getPonStats = async (req, res) => {
+  try {
+    const stats = await Customer.aggregate([
+      { $match: { ponNumber: { $exists: true, $ne: null, $ne: "" } } },
+      { $group: { _id: "$ponNumber", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } }
+    ]);
+    res.json({ success: true, data: stats });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

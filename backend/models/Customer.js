@@ -25,6 +25,13 @@ const customerSchema = new mongoose.Schema(
       uppercase: true,
     },
 
+    // --- Network / Hardware ---
+    ponNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
     // --- Connection Date ---
     connectionDate: {
       type: Date,

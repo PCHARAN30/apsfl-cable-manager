@@ -3,14 +3,18 @@ import toast from 'react-hot-toast'
 import { createCustomer } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 
-export default function AddCustomerModal({ onClose, onSuccess }) {
+export default function AddCustomerModal({ onClose, onSuccess, ponStats }) {
   const { t } = useLang()
-  const [form, setForm] = useState({ name:'', phone:'', address:'', cafNumber:'', planAmount:300, notes:'', connectionDate:'' })
+  const [form, setForm] = useState({ name:'', phone:'', address:'', cafNumber:'', planAmount:300, notes:'', connectionDate:'', ponNumber:'' })
   const [loading, setLoading] = useState(false)
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
 
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.cafNumber.trim()) { toast.error('Name and CAF are required'); return }
+    if (form.ponNumber && !/^[a-zA-Z0-9-]+$/.test(form.ponNumber)) {
+      toast.error('PON Number must be alphanumeric (e.g., PON2, 2)');
+      return;
+    }
     setLoading(true)
     try { await createCustomer(form); toast.success('Customer added!'); onSuccess(); onClose() }
     catch (err) { toast.error(err.response?.data?.message || 'Failed') }
@@ -18,6 +22,8 @@ export default function AddCustomerModal({ onClose, onSuccess }) {
   }
 
   const lbl = { fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:6, display:'block' }
+
+  const isPonFull = ponStats && form.ponNumber && (ponStats.get(form.ponNumber) || 0) >= 128;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
@@ -33,6 +39,16 @@ export default function AddCustomerModal({ onClose, onSuccess }) {
           {[
             { label:t('customerName'), key:'name', placeholder:'Full name', type:'text' },
             { label:t('cafNumberLabel'), key:'cafNumber', placeholder:'e.g. CAF100123', type:'text', mono:true },
+            { 
+              label:t('ponNumber') || 'PON Number', 
+              key:'ponNumber', 
+              placeholder:'e.g. PON-1', 
+              type:'text', 
+              mono:true,
+              warning: isPonFull 
+                ? `PON Full (${ponStats.get(form.ponNumber)}/128)` 
+                : null 
+            },
             { label:t('phoneNumber'), key:'phone', placeholder:'10-digit number', type:'text' },
             { label:t('connectionDate') || 'Date of Connection', key:'connectionDate', placeholder:'', type:'date' },
           { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text' },
@@ -43,6 +59,9 @@ export default function AddCustomerModal({ onClose, onSuccess }) {
               <span style={lbl}>{f.label}</span>
               <input type={f.type} className="input" style={f.mono?{fontFamily:'JetBrains Mono,monospace'}:{}}
                 value={form[f.key]} onChange={e=>set(f.key, e.target.value)} placeholder={f.placeholder}/>
+              {f.warning && (
+                <p className="text-xs text-amber-500 mt-1.5 font-medium">{f.warning}</p>
+              )}
             </div>
           ))}
         </div>

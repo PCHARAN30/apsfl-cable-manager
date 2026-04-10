@@ -37,6 +37,8 @@ export const updateCustomer = (id, data) => api.put(`/customers/${id}`, data)
 export const deleteCustomer = (id) => api.delete(`/customers/${id}`)
 export const importCustomers = (formData) =>
   api.post('/customers/import', formData)  // let axios set multipart headers
+export const bulkDeleteCustomers = (data) => api.post('/customers/bulk-delete', data);
+export const getPonStats = () => api.get('/customers/pon-stats');
 
 // ── Payments ───────────────────────────────────────────────────────────────────
 export const markPayment = (customerId, data) => api.post(`/payments/mark/${customerId}`, data)
@@ -44,6 +46,7 @@ export const markUnpaid  = (customerId) => api.post(`/payments/unpaid/${customer
 export const getPaymentHistory = (customerId) => api.get(`/payments/history/${customerId}`)
 export const deletePayment = (paymentId) => api.delete(`/payments/${paymentId}`)
 export const getAllPayments = (params) => api.get('/payments/all', { params })
+export const markUpToDate = (customerId) => api.post(`/payments/uptodate/${customerId}`)
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 export const getDashboardStats  = () => api.get('/dashboard/stats')

@@ -72,11 +72,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/search" element={<SearchCAF />} />
-          <Route path="/collection" element={<Placeholder title="Collection" />} />
           <Route path="/payments" element={<Payments />} />
-          <Route path="/reports" element={<Placeholder title="Reports" />} />
-          <Route path="/inventory" element={<Placeholder title="Inventory" />} />
-          <Route path="/services" element={<Placeholder title="Services" />} />
           <Route path="/import" element={<Import />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

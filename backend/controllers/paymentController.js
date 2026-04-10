@@ -11,12 +11,12 @@ const calcValidTill = (baseDate, planMonths = 1) => {
 
 /**
  * POST /api/payments/mark/:customerId
- * Body: { paymentType: "FULL"|"PARTIAL", amountPaid, planMonths, notes }
+ * Body: { paymentType: "FULL"|"PARTIAL", amountPaid, planMonths, paymentMethod }
  */
 exports.markPayment = async (req, res) => {
   try {
     const { customerId } = req.params;
-    const { amountPaid, notes = "" } = req.body;
+    const { amountPaid, paymentMethod = "Cash" } = req.body;
 
     const customer = await Customer.findById(customerId);
     if (!customer) {
@@ -55,6 +55,11 @@ exports.markPayment = async (req, res) => {
     }
 
     const now = new Date();
+
+    const dateStr = now.toLocaleDateString("en-IN");
+    const timeStr = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+    const generatedNote = `Paid via ${paymentMethod.toLowerCase()} on ${dateStr} at ${timeStr}`;
+
     // Base calculations on their connection origin if validTill is completely empty (e.g., first payment)
     let baseDate = customer.validTill || customer.connectionDate || customer.createdAt || now;
     
@@ -72,7 +77,7 @@ exports.markPayment = async (req, res) => {
     }
 
     customer.lastPaymentDate = now;
-    if (notes) customer.notes = notes;
+    customer.notes = generatedNote;
     await customer.save();
 
     const payment = await Payment.create({
@@ -85,7 +90,7 @@ exports.markPayment = async (req, res) => {
       paymentDate: now,
       validFrom: baseDate,
       validTill: customer.validTill || baseDate,
-      notes,
+      notes: generatedNote,
     });
 
     res.json({
@@ -183,6 +188,53 @@ exports.deletePayment = async (req, res) => {
 
     await customer.save();
     res.json({ success: true, message: "Payment deleted and customer status recalculated." });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/** POST /api/payments/uptodate/:customerId — manually mark as up to date */
+exports.markUpToDate = async (req, res) => {
+  try {
+    const customer = await Customer.findById(req.params.customerId);
+    if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
+
+    const now = new Date();
+    const joinDate = customer.connectionDate || customer.createdAt || now;
+    const planAmount = customer.planAmount || 300;
+
+    // Delete previous payments to create a clean slate
+    await Payment.deleteMany({ customer: customer._id });
+
+    // Calculate months needed to cover from joinDate up to the current cycle
+    let diffDays = Math.ceil((now - joinDate) / (1000 * 60 * 60 * 24));
+    let monthsNeeded = Math.max(1, Math.ceil(diffDays / 30));
+    let amountNeeded = monthsNeeded * planAmount;
+
+    // Insert a single backdated settlement payment
+    await Payment.create({
+      customer: customer._id,
+      cafNumber: customer.cafNumber,
+      customerName: customer.name,
+      amountPaid: amountNeeded,
+      planMonths: monthsNeeded,
+      paymentType: "FULL",
+      paymentDate: joinDate, // Backdated to original date so it doesn't inflate today's income reports!
+      validFrom: joinDate,
+      validTill: calcValidTill(joinDate, monthsNeeded),
+      notes: "System Adjustment (Marked Up to Date)",
+    });
+
+    // Advance validity and clear any partial debt
+    customer.validTill = calcValidTill(joinDate, monthsNeeded);
+    customer.carryOver = 0;
+    customer.partialAmountPaid = 0;
+    customer.status = "PAID"; 
+    customer.lastPaymentDate = now;
+    customer.notes = `Marked Up to Date on ${now.toLocaleDateString()}. \n` + (customer.notes || '');
+
+    await customer.save();
+    res.json({ success: true, data: customer, message: "Customer marked up to date" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

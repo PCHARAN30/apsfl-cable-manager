@@ -62,8 +62,8 @@ const en = {
     fullPaid: 'Full Paid',
     monthsPaid: 'Months Paid',
     amountPaid: 'Amount Paid',
-    notes: 'Notes (optional)',
-    notesPlaceholder: 'e.g. paid via UPI',
+    paymentMethod: 'Payment Method',
+    ponNumber: 'PON Number',
     cancel: 'Cancel',
     confirm: 'Confirm',
     carryOver: 'Carry-over balance from last month',
@@ -79,6 +79,7 @@ const en = {
     totalRows: 'Total Rows',
     imported: 'Imported',
     skipped: 'Skipped',
+    upToDate: 'Up to Date',
     howToExport: 'How to export from APSFL',
     // Payments
     paymentHistory: 'Payment History',

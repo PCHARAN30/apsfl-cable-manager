@@ -3,6 +3,7 @@ import { getDashboardStats, getExpiringCustomers, getMonthlyChart, resetDashboar
 import { useLang } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import PonDashboard from '../components/PonDashboard'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : '—'
 
@@ -198,6 +199,11 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* PON Dashboard */}
+      <div className="mt-4 fade-up stagger-8">
+        <PonDashboard />
+      </div>
     </div>
   )
 }
