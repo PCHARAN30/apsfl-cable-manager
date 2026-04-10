@@ -44,9 +44,8 @@ export const getPonStats = () => api.get('/customers/pon-stats');
 export const markPayment = (customerId, data) => api.post(`/payments/mark/${customerId}`, data)
 export const markUnpaid  = (customerId) => api.post(`/payments/unpaid/${customerId}`)
 export const getPaymentHistory = (customerId) => api.get(`/payments/history/${customerId}`)
-export const deletePayment = (paymentId) => api.delete(`/payments/${paymentId}`)
+export const deletePayment = (paymentId, params) => api.delete(`/payments/${paymentId}`, { params })
 export const getAllPayments = (params) => api.get('/payments/all', { params })
-export const markUpToDate = (customerId) => api.post(`/payments/uptodate/${customerId}`)
 
 // ── Dashboard ──────────────────────────────────────────────────────────────────
 export const getDashboardStats  = () => api.get('/dashboard/stats')

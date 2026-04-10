@@ -20,6 +20,7 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
     planAmount: customer.planAmount || 300, 
     notes: initialUserNotes, 
     connectionDate: customer.connectionDate ? customer.connectionDate.split('T')[0] : '',
+    billingStartDate: customer.billingStartDate ? customer.billingStartDate.split('T')[0] : '',
     ponNumber: customer.ponNumber || '',
     cafNumber: customer.cafNumber || ''
   })
@@ -64,14 +65,19 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
-      <div className="relative w-full max-w-[440px] p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in">
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in overflow-hidden">
+        
+        {/* Header */}
+        <div className="p-5 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--glass-bg)] shrink-0">
           <h2 style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:18, color:'var(--text-base)' }}>{t('editCustomer')}</h2>
           <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
-        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+        
+        {/* Scrollable Body */}
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[
             { label:t('customerName'), key:'name', placeholder:'Full name', type:'text' },
             { 
@@ -87,10 +93,10 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
             { label:t('cafNumberLabel') || 'CAF Number', key:'cafNumber', placeholder:'e.g. CAF100123', type:'text', mono:true },
             { label:t('phoneNumber'), key:'phone', placeholder:'10-digit number', type:'text' },
             { label:t('connectionDate') || 'Date of Connection', key:'connectionDate', placeholder:'', type:'date' },
-            { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text' },
             { label:t('monthlyPlan'), key:'planAmount', placeholder:'300', type:'number', mono:true },
+            { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text', fullWidth: true },
           ].map(f => (
-            <div key={f.key}>
+            <div key={f.key} className={f.fullWidth ? "md:col-span-2" : ""}>
               <span style={lbl}>{f.label}</span>
               <input type={f.type} className="input" style={f.mono?{fontFamily:'JetBrains Mono,monospace'}:{}}
                 value={form[f.key]} onChange={e=>set(f.key, e.target.value)} placeholder={f.placeholder}/>
@@ -100,8 +106,32 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
             </div>
           ))}
 
+          {/* Billing Reset Section */}
+          {form.billingStartDate && (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 md:col-span-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <span style={lbl} className="!mb-1 text-amber-300">Billing Reset Active</span>
+                  <p className="text-sm text-amber-400 font-medium">
+                    First bill from: {new Date(form.billingStartDate).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to remove the billing reset? This will make all past dues visible again.')) {
+                      set('billingStartDate', ''); // Set to empty string, backend will handle null
+                    }
+                  }}
+                  className="btn-secondary bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/20 text-xs px-3 py-1.5"
+                >
+                  Clear Reset
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Notes Section */}
-          <div>
+          <div className="md:col-span-2">
             <span style={lbl}>{t('notesLabel') || 'Notes'}</span>
             <textarea
               className="input w-full"
@@ -120,7 +150,10 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
             )}
           </div>
         </div>
-        <div style={{ display:'flex', gap:10, marginTop:20 }}>
+        </div>
+
+        {/* Sticky Footer */}
+        <div className="p-5 border-t border-[var(--border-color)] bg-[var(--glass-bg)] flex justify-end gap-3 shrink-0">
           <button onClick={onClose} className="btn-secondary" style={{ flex:1 }}>{t('cancel')}</button>
           <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ flex:1 }}>
             {loading ? t('updating') : t('saveChanges')}

@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 
 const LanguageContext = createContext()
 
@@ -112,11 +112,27 @@ const en = {
     edit: 'Edit',
 }
 
+const te = {
+    dashboard: 'డాష్‌బోర్డ్',
+    customers: 'కస్టమర్లు',
+    payments: 'చెల్లింపులు',
+    searchCAF: 'CAF శోధన',
+    addCustomer: 'కస్టమర్‌ని జోడించండి',
+    pay: 'చెల్లించండి',
+}
+
 export function LanguageProvider({ children }) {
-  const t = (key) => en[key] || key
+  const [lang, setLang] = useState(localStorage.getItem('apsfl_lang') || 'en')
+
+  useEffect(() => {
+    localStorage.setItem('apsfl_lang', lang)
+  }, [lang])
+
+  // Fallback to English if Telugu translation is missing
+  const t = (key) => (lang === 'te' && te[key]) ? te[key] : (en[key] || key)
 
   return (
-    <LanguageContext.Provider value={{ t }}>
+    <LanguageContext.Provider value={{ t, lang, setLang }}>
       {children}
     </LanguageContext.Provider>
   )

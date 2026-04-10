@@ -3,7 +3,12 @@ const Payment = require("../models/Payment");
 
 const calcValidTill = (baseDate, planMonths = 1) => {
   const d = new Date(baseDate);
-  d.setDate(d.getDate() + planMonths * 30);
+  const currentDay = d.getDate();
+  d.setMonth(d.getMonth() + planMonths);
+  if (d.getDate() !== currentDay) {
+    d.setDate(0); // Clamp to end of target month if it overflowed (e.g., Jan 31 -> Feb 28)
+  }
+  d.setDate(d.getDate() - 1);
   return d;
 };
 
@@ -25,6 +30,17 @@ exports.markPayment = async (req, res) => {
 
     if (!amountPaid || Number(amountPaid) <= 0) {
       return res.status(400).json({ success: false, message: "amountPaid must be > 0" });
+    }
+
+    const now = new Date();
+    const SYSTEM_START_DATE = new Date("2026-01-01T00:00:00.000Z");
+    const isOldCustomer = !customer.validTill || new Date(customer.validTill) < SYSTEM_START_DATE;
+
+    if (isOldCustomer) {
+      customer.carryOver = 0;
+      customer.partialAmountPaid = 0;
+      // Wipe dirty historical data to start completely fresh
+      await Payment.deleteMany({ customer: customer._id });
     }
 
     const planAmount = customer.planAmount || 300;
@@ -54,14 +70,26 @@ exports.markPayment = async (req, res) => {
       }
     }
 
-    const now = new Date();
-
     const dateStr = now.toLocaleDateString("en-IN");
     const timeStr = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
-    const generatedNote = `Paid via ${paymentMethod.toLowerCase()} on ${dateStr} at ${timeStr}`;
+    let generatedNote = `Paid via ${paymentMethod.toLowerCase()} on ${dateStr} at ${timeStr}`;
 
-    // Base calculations on their connection origin if validTill is completely empty (e.g., first payment)
-    let baseDate = customer.validTill || customer.connectionDate || customer.createdAt || now;
+    // Base calculations
+    let baseDate;
+    if (isOldCustomer) {
+      baseDate = now;
+      customer.billingStartDate = now; // Lock new Bill Start Date as the exact Payment Date
+      customer.isMigrated = true;
+      generatedNote = `[System: Auto-Migrated] ` + generatedNote;
+    } else {
+      const nextCycleStart = new Date(customer.validTill);
+      nextCycleStart.setDate(nextCycleStart.getDate() + 1);
+      
+      const nextStartNormalized = new Date(nextCycleStart.getFullYear(), nextCycleStart.getMonth(), nextCycleStart.getDate());
+      const todayNormalized = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      baseDate = nextStartNormalized < todayNormalized ? now : nextCycleStart;
+    }
     
     if (monthsToAdvance > 0) {
       customer.validTill = calcValidTill(baseDate, monthsToAdvance);
@@ -128,113 +156,68 @@ exports.markUnpaid = async (req, res) => {
 exports.deletePayment = async (req, res) => {
   try {
     const { paymentId } = req.params;
+    const { singleMonth } = req.query;
 
     const paymentToDelete = await Payment.findById(paymentId);
     if (!paymentToDelete) {
       return res.status(404).json({ success: false, message: "Payment not found" });
     }
     const customerId = paymentToDelete.customer;
-
-    await Payment.findByIdAndDelete(paymentId);
-
     const customer = await Customer.findById(customerId);
     if (!customer) {
       return res.status(404).json({ success: false, message: "Associated customer not found" });
     }
 
-    // Recalculate customer state from their remaining payments
-    const remainingPayments = await Payment.find({ customer: customerId }).sort({ paymentDate: 1 });
-
-    // Reset customer's financial state to their "factory settings"
-    customer.status = 'UNPAID';
-    customer.partialAmountPaid = 0;
-    customer.carryOver = 0;
-    customer.validTill = customer.connectionDate || customer.createdAt || null;
-    customer.lastPaymentDate = null;
-
     const planAmount = customer.planAmount || 300;
+    let monthsRemoved = 0;
 
-    // Re-apply FIFO logic for each remaining payment
-    for (const payment of remainingPayments) {
-      let funds = Number(payment.amountPaid);
-      let debt = customer.carryOver || 0;
-      let monthsToAdvance = 0;
-
-      if (funds < debt) {
-        customer.carryOver = debt - funds;
-        customer.partialAmountPaid = (customer.partialAmountPaid || 0) + funds;
-      } else {
-        funds -= debt;
-        let fullMonths = Math.floor(funds / planAmount);
-        let remainder = funds % planAmount;
-        
-        monthsToAdvance = fullMonths;
-        if (remainder > 0) {
-          monthsToAdvance += 1;
-          customer.carryOver = planAmount - remainder;
-          customer.partialAmountPaid = remainder;
-        } else {
-          customer.carryOver = 0;
-          customer.partialAmountPaid = 0;
-        }
-      }
-
-      let baseDate = customer.validTill || payment.paymentDate || new Date();
-      if (monthsToAdvance > 0) {
-        customer.validTill = calcValidTill(baseDate, monthsToAdvance);
-      }
-      customer.lastPaymentDate = payment.paymentDate;
+    // 1. Reduce multi-month payment by 1 month OR delete entirely
+    if (singleMonth === 'true' && paymentToDelete.amountPaid > planAmount && paymentToDelete.planMonths > 1) {
+      paymentToDelete.amountPaid -= planAmount;
+      paymentToDelete.planMonths -= 1;
+      await paymentToDelete.save();
+      monthsRemoved = 1;
+    } else {
+      monthsRemoved = paymentToDelete.planMonths || Math.max(1, Math.floor(paymentToDelete.amountPaid / planAmount));
+      await Payment.findByIdAndDelete(paymentId);
     }
 
-    await customer.save();
-    res.json({ success: true, message: "Payment deleted and customer status recalculated." });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
+    // 2. Safely rollback validity without recalculating from start
+    if (customer.validTill) {
+      const d = new Date(customer.validTill);
+      const currentDay = d.getDate() + 1;
+      d.setDate(d.getDate() + 1);
+      d.setMonth(d.getMonth() - monthsRemoved);
+      if (d.getDate() !== currentDay) {
+        d.setDate(0);
+      }
+      d.setDate(d.getDate() - 1);
+      
+      // Floor to either the billingStartDate target or the original connection
+      const baseFloorDate = customer.billingStartDate 
+        ? new Date(new Date(customer.billingStartDate).getTime() - 24*60*60*1000) 
+        : (customer.connectionDate || customer.createdAt);
+        
+      if (baseFloorDate && d < baseFloorDate) {
+        customer.validTill = baseFloorDate; 
+      } else {
+        customer.validTill = d;
+      }
+    }
 
-/** POST /api/payments/uptodate/:customerId — manually mark as up to date */
-exports.markUpToDate = async (req, res) => {
-  try {
-    const customer = await Customer.findById(req.params.customerId);
-    if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
-
+    // 3. Re-evaluate customer status against today
     const now = new Date();
-    const joinDate = customer.connectionDate || customer.createdAt || now;
-    const planAmount = customer.planAmount || 300;
+    if (customer.validTill && customer.validTill < now) {
+      customer.status = "UNPAID";
+    } else {
+      customer.status = customer.carryOver > 0 ? "PARTIAL" : "PAID";
+    }
 
-    // Delete previous payments to create a clean slate
-    await Payment.deleteMany({ customer: customer._id });
-
-    // Calculate months needed to cover from joinDate up to the current cycle
-    let diffDays = Math.ceil((now - joinDate) / (1000 * 60 * 60 * 24));
-    let monthsNeeded = Math.max(1, Math.ceil(diffDays / 30));
-    let amountNeeded = monthsNeeded * planAmount;
-
-    // Insert a single backdated settlement payment
-    await Payment.create({
-      customer: customer._id,
-      cafNumber: customer.cafNumber,
-      customerName: customer.name,
-      amountPaid: amountNeeded,
-      planMonths: monthsNeeded,
-      paymentType: "FULL",
-      paymentDate: joinDate, // Backdated to original date so it doesn't inflate today's income reports!
-      validFrom: joinDate,
-      validTill: calcValidTill(joinDate, monthsNeeded),
-      notes: "System Adjustment (Marked Up to Date)",
-    });
-
-    // Advance validity and clear any partial debt
-    customer.validTill = calcValidTill(joinDate, monthsNeeded);
-    customer.carryOver = 0;
-    customer.partialAmountPaid = 0;
-    customer.status = "PAID"; 
-    customer.lastPaymentDate = now;
-    customer.notes = `Marked Up to Date on ${now.toLocaleDateString()}. \n` + (customer.notes || '');
+    const lastPayment = await Payment.findOne({ customer: customerId }).sort({ paymentDate: -1 });
+    customer.lastPaymentDate = lastPayment ? lastPayment.paymentDate : null;
 
     await customer.save();
-    res.json({ success: true, data: customer, message: "Customer marked up to date" });
+    res.json({ success: true, message: "Payment history updated." });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

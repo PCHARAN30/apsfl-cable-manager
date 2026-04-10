@@ -37,6 +37,14 @@ const customerSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    billingStartDate: {
+      type: Date,
+      default: null,
+    },
+    isMigrated: {
+      type: Boolean,
+      default: false,
+    },
 
     // --- Plan & Amount ---
     planAmount: {

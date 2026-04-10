@@ -30,7 +30,7 @@ export default function Payments() {
   useEffect(()=>{ load() }, [page])
 
   const handleDelete = async (p) => {
-    if (!window.confirm(`Delete payment of ₹${p.amountPaid} for ${p.customerName}?\n\nThis will recalculate the customer's balance.`)) return
+    if (!window.confirm(`Delete entire payment of ₹${p.amountPaid} for ${p.customerName}?\n\nThis will reverse their validity by ${p.planMonths} month(s).`)) return
     try {
       await deletePayment(p._id)
       toast.success('Payment deleted')

@@ -6,9 +6,7 @@ import toast from 'react-hot-toast'
 export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
   const { t } = useLang()
   const [loading, setLoading] = useState(true)
-  const [groupedHistory, setGroupedHistory] = useState([])
-  const [availableYears, setAvailableYears] = useState([])
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [payments, setPayments] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
@@ -21,105 +19,7 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
     setLoading(true)
     try {
       const res = await getPaymentHistory(customer._id)
-      const payments = res.data.data || [];
-      
-      // Determine join date & boundaries FIRST to start FIFO filling
-      let joinDate = customer.connectionDate ? new Date(customer.connectionDate) : (customer.createdAt ? new Date(customer.createdAt) : new Date());
-      if (payments.length > 0) {
-        const earliestPayment = new Date(Math.min(...payments.map(p => new Date(p.paymentDate || p.createdAt))));
-        if (earliestPayment < joinDate) joinDate = earliestPayment;
-      }
-      
-      const joinYear = joinDate.getFullYear();
-      const joinMonth = joinDate.getMonth();
-
-      const paymentsByMonth = {};
-      let maxAllocatedYear = joinYear;
-      const planAmount = Math.max(Number(customer.planAmount) || 300, 1);
-      
-      let cursorY = joinYear;
-      let cursorM = joinMonth;
-      
-      const sortedPayments = [...(payments || [])].sort((a, b) => 
-        new Date(a.paymentDate || a.createdAt) - new Date(b.paymentDate || b.createdAt)
-      );
-
-      sortedPayments.forEach(p => {
-        let remainingAmount = p.amountPaid;
-
-        // FIFO Distribution across buckets
-        while (remainingAmount > 0) {
-          let key = `${cursorY}-${cursorM}`;
-          
-          if (!paymentsByMonth[key]) {
-            paymentsByMonth[key] = { amount: 0, methods: [], dates: [], rawPayment: p };
-          }
-          
-          let monthDebt = planAmount - paymentsByMonth[key].amount;
-          if (monthDebt <= 0) {
-            cursorM++;
-            if (cursorM > 11) { cursorM = 0; cursorY++; }
-            continue;
-          }
-          
-          let applied = Math.min(remainingAmount, monthDebt);
-          paymentsByMonth[key].amount += applied;
-          
-          let method = p.notes || 'Cash';
-          if (!paymentsByMonth[key].methods.includes(method)) paymentsByMonth[key].methods.push(method);
-          paymentsByMonth[key].dates.push(p.paymentDate || p.createdAt);
-          paymentsByMonth[key].rawPayment = p;
-          
-          remainingAmount -= applied;
-          if (cursorY > maxAllocatedYear) maxAllocatedYear = cursorY;
-
-          if (remainingAmount > 0) {
-            cursorM++;
-            if (cursorM > 11) { cursorM = 0; cursorY++; }
-          }
-        }
-      });
-
-      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-      const currentYear = new Date().getFullYear();
-      const startYear = joinYear;
-      const endYear = Math.max(currentYear, maxAllocatedYear);
-
-      const formatted = [];
-
-      // Generate matrix from current year backwards to join year
-      for (let y = endYear; y >= startYear; y--) {
-        const yearMonths = months.map((month, index) => {
-          const key = `${y}-${index}`;
-          const payment = paymentsByMonth[key];
-          const today = new Date();
-          const isFutureMonth = y > today.getFullYear() || (y === today.getFullYear() && index > today.getMonth());
-
-          if (y === joinYear && index < joinMonth) return { month, status: "not_applicable" };
-
-          if (payment && payment.amount > 0) {
-            let status = payment.amount >= planAmount ? "paid" : "partial";
-            return { 
-               month, 
-               status,
-               amount: payment.amount,
-               date: payment.dates[payment.dates.length - 1],
-               method: payment.methods.join(', '),
-               rawPayment: payment.rawPayment
-            };
-          }
-
-          if (isFutureMonth) return { month, status: "future" }; // Don't mark future months as unpaid
-          return { month, status: "unpaid" };
-        });
-        formatted.push({ year: y, months: yearMonths });
-      }
-
-      setGroupedHistory(formatted)
-      const years = formatted.map(f => f.year)
-      setAvailableYears(years)
-      if (years.length > 0) setSelectedYear(years[0])
+      setPayments(res.data.data || [])
     } catch (error) {
       console.error(error)
       toast.error('Failed to load history')
@@ -129,12 +29,12 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
   }
 
   const handleDeletePayment = async (payment) => {
-    if (!window.confirm(`Delete payment of ₹${payment.amountPaid} made on ${new Date(payment.paymentDate).toLocaleDateString()}?\n\nThis action cannot be undone and will recalculate the customer's entire history.`)) {
+    if (!window.confirm(`Delete 1 month of validity from this payment record?\n\nThis action will safely deduct exactly one month of validity.`)) {
         return;
     }
     try {
-        await deletePayment(payment._id);
-        toast.success('Payment deleted successfully.');
+        await deletePayment(payment._id, { singleMonth: true });
+        toast.success('1 Month removed from payment successfully.');
         await fetchHistory(); // Refresh the history
     } catch (error) {
         console.error("Delete payment error:", error);
@@ -148,28 +48,52 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
   const isSearching = searchQuery.trim().length > 0;
   const query = searchQuery.toLowerCase();
 
-  const displayedHistory = groupedHistory.map(yearGroup => {
-    const filteredMonths = yearGroup.months.filter(m => {
-      if (!isSearching) return true;
-      return (
-        m.month.toLowerCase().includes(query) ||
-        m.status.toLowerCase().includes(query) ||
-        (m.amount && String(m.amount).includes(query)) ||
-        (m.method && m.method.toLowerCase().includes(query))
-      );
-    });
-    return { ...yearGroup, months: filteredMonths };
-  }).filter(yearGroup => isSearching ? yearGroup.months.length > 0 : yearGroup.year === selectedYear);
+  const filteredPayments = payments.filter(p => {
+    if (!isSearching) return true;
+    return (
+      String(p.amountPaid).includes(query) ||
+      (p.notes && p.notes.toLowerCase().includes(query))
+    );
+  });
+
+  const formatDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'NA';
+
+  // Calculate Next Pending Cycle logic exactly matching your rule
+  let pendingStart = new Date();
+  if (customer.validTill) {
+      const vt = new Date(customer.validTill);
+      if (vt >= new Date(new Date().setHours(0,0,0,0))) {
+          pendingStart = new Date(vt);
+          pendingStart.setDate(pendingStart.getDate() + 1);
+      }
+  } else if (customer.billingStartDate) {
+      pendingStart = new Date(customer.billingStartDate);
+  }
+
+  const pendingEnd = new Date(pendingStart);
+  const pDay = pendingEnd.getDate();
+  pendingEnd.setMonth(pendingEnd.getMonth() + 1);
+  if (pendingEnd.getDate() !== pDay) pendingEnd.setDate(0);
+  pendingEnd.setDate(pendingEnd.getDate() - 1);
+
+  const isPendingOverdue = pendingStart < new Date(new Date().setHours(0,0,0,0));
+
+  const statusStyles = {
+    PAID: 'bg-[#ECFDF5] border-l-4 border-[#22C55E]',
+    PARTIAL: 'bg-amber-500/5 border-l-4 border-amber-500',
+    PENDING: 'bg-[#FEF3C7] border-l-4 border-[#F59E0B]',
+    EXPIRED: 'bg-[#FEE2E2] border-l-4 border-[#EF4444]',
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] w-full max-w-2xl rounded-2xl shadow-2xl shadow-black/50 flex flex-col max-h-[85vh] overflow-hidden fade-up">
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] w-full max-w-2xl rounded-3xl shadow-2xl shadow-black/50 flex flex-col max-h-[85vh] overflow-hidden scale-in">
         
         {/* Header */}
         <div className="p-6 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--glass-bg)]">
           <div>
             <h2 className="text-xl font-bold text-[var(--text-base)] tracking-tight">
-              {t('paymentHistoryFor')} <span className="text-emerald-400">{customer.name}</span>
+              {t('paymentHistoryFor')} <span className="text-orange-500">{customer.name}</span>
             </h2>
             <p className="text-sm text-slate-400 mt-1 font-mono">CAF: {customer.cafNumber}</p>
           </div>
@@ -185,115 +109,84 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
         <div className="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--surface2)]">
           <input 
             type="text" 
-            placeholder="Search by amount (e.g., 300), month, or method (e.g., UPI)..." 
-            className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner"
+            placeholder="Search by amount (e.g., 300) or payment method..." 
+            className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        {/* Year Filter Tabs */}
-        {!loading && availableYears.length > 1 && !isSearching && (
-          <div className="bg-[var(--glass-bg)] border-b border-[var(--border-color)] px-6 py-3 flex gap-2 overflow-x-auto">
-            {availableYears.map(year => (
-              <button
-                key={year}
-                onClick={() => setSelectedYear(year)}
-                className={`px-4 py-1.5 text-sm font-bold rounded-lg transition-colors ${
-                  selectedYear === year 
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-base)] hover:bg-[var(--surface2)] border border-transparent'
-                }`}
-              >
-                {year}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
           {loading ? (
-            <div className="text-center py-10 text-slate-400 animate-pulse">Loading history...</div>
-          ) : groupedHistory.length === 0 ? (
-            <div className="text-center py-10 text-slate-500 bg-[var(--surface2)] rounded-xl border border-[var(--border-color)]">
-              {t('noHistoryFound')}
-            </div>
-          ) : displayedHistory.length === 0 ? (
-            <div className="text-center py-10 text-slate-500 bg-[var(--surface2)] rounded-xl border border-[var(--border-color)]">
-              No matching records found for "{searchQuery}"
-            </div>
+            <div className="text-center py-10 text-slate-500 animate-pulse">Loading subscription history...</div>
           ) : (
-            displayedHistory.map((yearGroup) => (
-              <div key={yearGroup.year} className="bg-[var(--surface2)] rounded-xl border border-[var(--border-color)] overflow-hidden">
-                {(availableYears.length === 1 || isSearching) && (
-                  <div className="bg-[var(--border-color)] px-5 py-3 border-b border-[var(--border-color)] font-bold text-[var(--text-base)] shadow-inner">
-                    {yearGroup.year}
+            <>
+              
+              {/* Timeline Reset Banner */}
+              {customer.billingStartDate && !isSearching && payments.length === 0 && (
+                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 shrink-0">
+                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                   </div>
+                   <div>
+                      <div className="text-sm font-bold text-amber-400">Billing Timeline Reset</div>
+                      <div className="text-xs text-amber-500/80 mt-0.5">All dues before {formatDate(customer.billingStartDate)} were cleared. First bill due from {formatDate(customer.billingStartDate)}.</div>
+                   </div>
+                 </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Pending Cycle */}
+                {!isSearching && (
+                  <div className={`p-4 rounded-lg ${isPendingOverdue ? statusStyles.EXPIRED : statusStyles.PENDING}`}>
+                    <div className="flex justify-between items-start">
+                      <div className="font-bold text-sm text-slate-700">
+                        {formatDate(pendingStart)} → {formatDate(pendingEnd)}
+                      </div>
+                      <span className={`text-xs font-bold ${isPendingOverdue ? 'text-red-600' : 'text-amber-600'}`}>
+                        {isPendingOverdue ? '❌ EXPIRED' : '⏳ PENDING'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-2">
+                      ₹{customer.planAmount || 300} | Next Bill
+                    </div>
                   </div>
                 )}
-                <div className="p-3 space-y-1.5">
-                  {yearGroup.months.map((m, i) => {
-                    if (m.status === 'not_applicable') {
-                      return null; // Don't render months before joining
-                    }
-                    if (m.status === 'future') {
-                      return ( // Render future months differently, less prominently
-                        <div key={i} className="flex items-center gap-4 py-2 px-3">
-                          <div className="w-10 text-sm font-bold text-slate-600 uppercase tracking-wider">{m.month}</div>
-                          <div className="flex-1 text-slate-600 text-sm font-medium">—</div>
+
+                {/* Payment Cycles */}
+                {filteredPayments.map(p => {
+                  const isPartial = p.paymentType === 'PARTIAL';
+                  const vfStr = formatDate(p.validFrom || p.paymentDate);
+                  const vtStr = formatDate(p.validTill);
+                  const isDebtOnly = vfStr === vtStr;
+                  
+                  return (
+                    <div key={p._id} className={`group p-4 rounded-lg relative ${isPartial ? statusStyles.PARTIAL : statusStyles.PAID}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="font-bold text-sm text-slate-700">
+                          {isDebtOnly ? 'Debt / Partial Payment' : `${vfStr} → ${vtStr}`}
                         </div>
-                      );
-                    }
-                    if (m.status === 'paid') {
-                      return (
-                        <div key={i} className="group flex items-center gap-4 py-2 px-3 rounded-lg bg-emerald-500/10 transition-all hover:bg-emerald-500/15">
-                          <div className="w-10 text-sm font-bold text-slate-400 uppercase tracking-wider">{m.month}</div>
-                          <div className="flex-1 text-sm">
-                            <span className="font-semibold text-emerald-400">✅ Paid</span>
-                            <span className="ml-2 text-slate-500 text-xs">
-                              (Ref: ₹{m.amount} on {new Date(m.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})
-                            </span>
-                          </div>
-                          <button onClick={() => handleDeletePayment(m.rawPayment)} className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-400 p-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                    )
-                  }
-                  if (m.status === 'partial') {
-                    return (
-                      <div key={i} className="group flex items-center gap-4 py-2 px-3 rounded-lg bg-amber-500/10 transition-all hover:bg-amber-500/15">
-                        <div className="w-10 text-sm font-bold text-slate-400 uppercase tracking-wider">{m.month}</div>
-                        <div className="flex-1 text-sm">
-                          <span className="font-semibold text-amber-400">🟠 Partial</span>
-                          <span className="ml-2 text-slate-500 text-xs">
-                            (Ref: ₹{m.amount} on {new Date(m.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})
-                          </span>
-                        </div>
-                        <button onClick={() => handleDeletePayment(m.rawPayment)} className="opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-400 p-1.5 rounded-full bg-red-500/10 hover:bg-red-500/20">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        <span className={`text-xs font-bold ${isPartial ? 'text-amber-600' : 'text-green-600'}`}>
+                          {isPartial ? '🟠 PARTIAL' : '✅ PAID'}
+                        </span>
                       </div>
-                    )
-                  }
-                    if (m.status === 'unpaid') {
-                      return (
-                        <div key={i} className="flex items-center gap-4 py-2 px-3 rounded-lg">
-                          <div className="w-10 text-sm font-bold text-slate-400 uppercase tracking-wider">{m.month}</div>
-                          <div className="flex-1 text-sm font-semibold text-red-400">
-                            ❌ Unpaid
-                          </div>
-                        </div>
-                      )
-                    }
-                  })}
-                </div>
+                      <div className="text-xs text-slate-500 mt-2">
+                        <span className="font-mono">₹{p.amountPaid}</span> | Paid on {formatDate(p.paymentDate)}
+                      </div>
+                      <button onClick={() => handleDeletePayment(p)} className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-60 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-500/10" title="Delete Payment">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
-            ))
+
+              {filteredPayments.length === 0 && isSearching && (
+                <div className="text-center py-8 text-slate-500">No matching payments found.</div>
+              )}
+
+            </>
           )}
         </div>
       </div>

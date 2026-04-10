@@ -28,14 +28,19 @@ export default function AddCustomerModal({ onClose, onSuccess, ponStats }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
-      <div className="relative w-full max-w-[440px] p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in">
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in overflow-hidden">
+        
+        {/* Header */}
+        <div className="p-5 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--glass-bg)] shrink-0">
           <h2 style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:18, color:'var(--text-base)' }}>{t('addCustomer')}</h2>
           <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
         </div>
-        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+
+        {/* Scrollable Body */}
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[
             { label:t('customerName'), key:'name', placeholder:'Full name', type:'text' },
             { label:t('cafNumberLabel'), key:'cafNumber', placeholder:'e.g. CAF100123', type:'text', mono:true },
@@ -51,11 +56,11 @@ export default function AddCustomerModal({ onClose, onSuccess, ponStats }) {
             },
             { label:t('phoneNumber'), key:'phone', placeholder:'10-digit number', type:'text' },
             { label:t('connectionDate') || 'Date of Connection', key:'connectionDate', placeholder:'', type:'date' },
-          { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text' },
             { label:t('monthlyPlan'), key:'planAmount', placeholder:'300', type:'number', mono:true },
-            { label:t('notesLabel'), key:'notes', placeholder:'Optional', type:'text' },
+            { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text', fullWidth: true },
+            { label:t('notesLabel'), key:'notes', placeholder:'Optional', type:'text', fullWidth: true },
           ].map(f => (
-            <div key={f.key}>
+            <div key={f.key} className={f.fullWidth ? "md:col-span-2" : ""}>
               <span style={lbl}>{f.label}</span>
               <input type={f.type} className="input" style={f.mono?{fontFamily:'JetBrains Mono,monospace'}:{}}
                 value={form[f.key]} onChange={e=>set(f.key, e.target.value)} placeholder={f.placeholder}/>
@@ -64,8 +69,11 @@ export default function AddCustomerModal({ onClose, onSuccess, ponStats }) {
               )}
             </div>
           ))}
+          </div>
         </div>
-        <div style={{ display:'flex', gap:10, marginTop:20 }}>
+
+        {/* Sticky Footer */}
+        <div className="p-5 border-t border-[var(--border-color)] bg-[var(--glass-bg)] flex justify-end gap-3 shrink-0">
           <button onClick={onClose} className="btn-secondary" style={{ flex:1 }}>{t('cancel')}</button>
           <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ flex:1 }}>
             {loading ? t('adding') : t('addBtn')}

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { getCustomers, markUnpaid, deleteCustomer, bulkDeleteCustomers, getPonStats, markUpToDate } from '../services/api'
+import { getCustomers, markUnpaid, deleteCustomer, bulkDeleteCustomers, getPonStats } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 import PaymentModal from '../components/PaymentModal'
 import AddCustomerModal from '../components/AddCustomerModal'
@@ -10,10 +10,10 @@ import EditCustomerModal from '../components/EditCustomerModal'
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'
 
 const StatusBadge = ({ status }) => {
-  const cls = { PAID:'badge-paid', UNPAID:'badge-unpaid', PARTIAL:'badge-partial' }
-  const dot = { PAID:'#15b070', UNPAID:'#ef4444', PARTIAL:'#f59e0b' }
+  const cls = { PAID:'bg-green-100 text-green-700', UNPAID:'bg-red-100 text-red-700', PARTIAL:'bg-amber-100 text-amber-700' }
+  const dot = { PAID:'#22C55E', UNPAID:'#EF4444', PARTIAL:'#F59E0B' }
   return (
-    <span className={cls[status]||'badge-unpaid'}>
+    <span className={`px-2 py-1 text-xs font-bold rounded-md flex items-center gap-1.5 w-max ${cls[status]||'bg-red-100 text-red-700'}`}>
       <span style={{ width:5, height:5, borderRadius:'50%', background:dot[status], display:'inline-block' }}/>
       {status}
     </span>
@@ -29,6 +29,7 @@ export default function Customers() {
   const [statusFilter, setStatus] = useState('ALL')
   const [ponFilter, setPonFilter] = useState('')
   const [availablePons, setAvailablePons] = useState([])
+  const [ponStats, setPonStats]   = useState(new Map())
   const [payModal, setPayModal]   = useState(null)
   const [addModal, setAddModal]   = useState(false)
   const [editModal, setEditModal] = useState(null)
@@ -40,10 +41,17 @@ export default function Customers() {
   const [selectedIds, setSelectedIds] = useState([])
   const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => {
+  const loadPonStats = () => {
     getPonStats()
-      .then(res => setAvailablePons(res.data.data.map(s => s._id)))
+      .then(res => {
+        setAvailablePons(res.data.data.map(s => s._id));
+        setPonStats(new Map(res.data.data.map(s => [s._id, s.count])));
+      })
       .catch(console.error)
+  }
+
+  useEffect(() => {
+    loadPonStats()
   }, [])
 
   const load = useCallback(async () => {
@@ -71,15 +79,9 @@ export default function Customers() {
   const handleDelete = async (c) => {
     if (!window.confirm(`Delete ${c.name}?`)) return
     setDeleting(c._id)
-    try { await deleteCustomer(c._id); toast.success('Deleted'); load() }
+    try { await deleteCustomer(c._id); toast.success('Deleted'); load(); loadPonStats(); }
     catch { toast.error('Delete failed') }
     finally { setDeleting(null) }
-  }
-
-  const handleUpToDate = async (c) => {
-    if (!window.confirm(`Mark ${c.name} as Up to Date?\n\nThis will automatically generate a settlement payment to mark all previous unpaid months as PAID up to today, without altering their original connection date.`)) return
-    try { await markUpToDate(c._id); toast.success('Marked Up to Date'); load() }
-    catch (err) { toast.error(err.response?.data?.message || 'Failed') }
   }
 
   const toggleSelect = (id) => {
@@ -101,6 +103,7 @@ export default function Customers() {
       toast.success(`${selectedIds.length} customers deleted successfully`)
       setSelectedIds([])
       load()
+      loadPonStats()
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to delete customers')
     } finally {
@@ -145,7 +148,7 @@ export default function Customers() {
           >
             <option value="">All PONs</option>
             {availablePons.map(pon => (
-              <option key={pon} value={pon}>{pon}</option>
+              <option key={pon} value={pon}>{pon} ({ponStats.get(pon) || 0}/128)</option>
             ))}
           </select>
           <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
@@ -215,8 +218,10 @@ export default function Customers() {
               ) : customers.map((c, idx) => {
                 const days = c.validTill ? Math.ceil((new Date(c.validTill)-new Date())/86400000) : null
                 const expiring = days !== null && days <= 5 && days > 0 && c.status !== 'UNPAID'
+                const isExpired = c.status === 'UNPAID' || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
+                
                 return (
-                  <tr key={c._id} className="tbl-row" style={expiring ? { background:'rgba(245,158,11,0.04)' } : {}}>
+                  <tr key={c._id} className={`tbl-row ${isExpired ? 'bg-red-50 dark:bg-red-900/20' : expiring ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}>
                     <td className="tbl-cell" style={{ textAlign: 'center' }}>
                       <input 
                         type="checkbox"
@@ -244,28 +249,15 @@ export default function Customers() {
                     </td>
                     <td className="tbl-cell">
                       <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                        <button onClick={()=>setPayModal(c)}
-                          style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
-                            background:'rgba(21,176,112,0.12)', color:'#34d399', border:'1px solid rgba(21,176,112,0.2)',
-                            transition:'all 0.15s' }}>
+                        <button onClick={()=>setPayModal(c)} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-[#22C55E] hover:bg-green-700 transition-colors">
                           {t('pay')}
                         </button>
-                        <button onClick={()=>setEditModal(c)}
-                          style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
-                            background:'rgba(245,158,11,0.1)', color:'#f59e0b', border:'1px solid rgba(245,158,11,0.2)',
-                            transition:'all 0.15s' }}>
+                        <button onClick={()=>setEditModal(c)} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 bg-slate-200 hover:bg-slate-300 transition-colors">
                           {t('edit')}
                         </button>
-                    <button onClick={()=>handleUpToDate(c)}
-                      style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
-                        background:'rgba(168,85,247,0.1)', color:'#a855f7', border:'1px solid rgba(168,85,247,0.2)',
-                        transition:'all 0.15s' }} title="Reset validity to today">
-                      {t('upToDate')}
-                    </button>
                         <button onClick={()=>setHistoryModal(c)}
-                          style={{ padding:'5px 12px', fontSize:12, fontWeight:600, borderRadius:8, cursor:'pointer',
-                            background:'rgba(59,130,246,0.1)', color:'#60a5fa', border:'1px solid rgba(59,130,246,0.2)',
-                            transition:'all 0.15s' }}>
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition-colors"
+                        >
                           View
                         </button>
                         <button onClick={()=>handleDelete(c)} disabled={deleting===c._id}
@@ -299,8 +291,8 @@ export default function Customers() {
       </div>
 
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
-      {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={load}/>}
-      {editModal && <EditCustomerModal customer={editModal} onClose={()=>setEditModal(null)} onSuccess={load}/>}
+      {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}
+      {editModal && <EditCustomerModal customer={editModal} onClose={()=>setEditModal(null)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}
       <PaymentHistoryModal 
         isOpen={!!historyModal} 
         onClose={() => setHistoryModal(null)} 

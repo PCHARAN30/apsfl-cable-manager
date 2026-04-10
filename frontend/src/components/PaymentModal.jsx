@@ -24,12 +24,28 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
     label: { fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:8, display:'block' },
   }
 
+  const getNextCycle = () => {
+    let nextStart = new Date();
+    if (customer.validTill) {
+      const vt = new Date(customer.validTill);
+      if (vt >= new Date(new Date().setHours(0,0,0,0))) {
+        nextStart = new Date(vt);
+        nextStart.setDate(nextStart.getDate() + 1);
+      }
+    }
+    const nextEnd = new Date(nextStart);
+    nextEnd.setMonth(nextEnd.getMonth() + 1);
+    nextEnd.setDate(nextEnd.getDate() - 1);
+    return `${nextStart.toLocaleDateString('en-IN', {day:'2-digit', month:'short'})} → ${nextEnd.toLocaleDateString('en-IN', {day:'2-digit', month:'short'})}`;
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
-      <div className="relative w-full max-w-[440px] p-6 sm:p-8 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in">
+      <div className="relative w-full max-w-md max-h-[85vh] flex flex-col rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in overflow-hidden">
+        
         {/* Header */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20 }}>
+        <div className="p-5 border-b border-[var(--border-color)] flex justify-between items-start bg-[var(--glass-bg)] shrink-0">
           <div>
             <h2 style={{ fontFamily:'Sora,sans-serif', fontWeight:700, fontSize:18, color:'var(--text-base)' }}>{customer.name}</h2>
             <p style={{ fontSize:12, color:'var(--text-muted)', fontFamily:'JetBrains Mono,monospace', marginTop:2 }}>{customer.cafNumber}</p>
@@ -39,8 +55,11 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
           </button>
         </div>
 
+        {/* Scrollable Body */}
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
+          
         {/* Billing Summary */}
-        <div style={{ marginBottom:20, padding:'14px', borderRadius:12, background:'var(--surface2)', border:'1px solid var(--border-color)' }}>
+        <div className="mb-5 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6, fontSize:13 }}>
             <span style={{ color:'var(--text-muted)' }}>Monthly Plan:</span>
             <span style={{ fontWeight:600, color:'var(--text-base)', fontFamily:'JetBrains Mono,monospace' }}>₹{customer.planAmount || 300}</span>
@@ -56,6 +75,12 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
                 <span style={{ color:'var(--text-muted)' }}>Account Status:</span>
                 <span style={{ fontWeight:600, color:'#ef4444' }}>EXPIRED</span>
              </div>
+          )}
+          {customer.status !== 'UNPAID' && (
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border-color)' }}>
+              <span style={{ color:'var(--text-muted)' }}>Next Billing:</span>
+              <span style={{ fontWeight:600, color:'var(--text-base)', fontFamily:'JetBrains Mono,monospace' }}>{getNextCycle()}</span>
+            </div>
           )}
         </div>
 
@@ -76,13 +101,16 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
             <option value="Card">Card</option>
           </select>
         </div>
+        </div>
 
-        <div style={{ display:'flex', gap:10 }}>
+        {/* Sticky Footer */}
+        <div className="p-5 border-t border-[var(--border-color)] bg-[var(--glass-bg)] flex gap-3 shrink-0">
           <button onClick={onClose} className="btn-secondary" style={{ flex:1 }}>{t('cancel')}</button>
           <button onClick={handleSubmit} disabled={loading} className="btn-primary" style={{ flex:1 }}>
             {loading ? '...' : t('confirm')}
           </button>
         </div>
+
       </div>
     </div>
   )

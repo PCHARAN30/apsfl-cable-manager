@@ -12,7 +12,12 @@ const Payment = require("../models/Payment");
  */
 const calcValidTill = (baseDate, planMonths = 1) => {
   const d = new Date(baseDate);
-  d.setDate(d.getDate() + planMonths * 30);
+  const currentDay = d.getDate();
+  d.setMonth(d.getMonth() + planMonths);
+  if (d.getDate() !== currentDay) {
+    d.setDate(0);
+  }
+  d.setDate(d.getDate() - 1);
   return d;
 };
 
@@ -129,8 +134,9 @@ exports.createCustomer = async (req, res) => {
 /** PUT /api/customers/:id  — update customer details */
 exports.updateCustomer = async (req, res) => {
   try {
-    const updates = (({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber }) => ({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber }))(req.body);
-    if (!updates.connectionDate) updates.connectionDate = null; // Prevent CastError
+    const updates = (({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber, billingStartDate }) => ({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber, billingStartDate }))(req.body);
+    if ('connectionDate' in req.body && !updates.connectionDate) updates.connectionDate = null;
+    if ('billingStartDate' in req.body && !updates.billingStartDate) updates.billingStartDate = null;
     
     const existingCustomer = await Customer.findById(req.params.id);
     if (!existingCustomer) return res.status(404).json({ success: false, message: "Customer not found" });
@@ -147,7 +153,7 @@ exports.updateCustomer = async (req, res) => {
     }
 
     // Generate Auto-Note for tracked changes
-    const trackableFields = ['name', 'phone', 'address', 'planAmount', 'ponNumber', 'cafNumber', 'connectionDate'];
+    const trackableFields = ['name', 'phone', 'address', 'planAmount', 'ponNumber', 'cafNumber', 'connectionDate', 'billingStartDate'];
     const changedFields = [];
 
     for (const field of trackableFields) {
@@ -156,7 +162,7 @@ exports.updateCustomer = async (req, res) => {
         let newVal = updates[field];
         
         // Handle date formatting for accurate comparison
-        if (field === 'connectionDate') {
+        if (field === 'connectionDate' || field === 'billingStartDate') {
           oldVal = oldVal ? new Date(oldVal).toDateString() : '';
           newVal = newVal ? new Date(newVal).toDateString() : '';
         } else {
@@ -165,7 +171,7 @@ exports.updateCustomer = async (req, res) => {
         }
 
         if (oldVal !== newVal) {
-          const displayNames = { planAmount: 'plan amount', ponNumber: 'PON number', cafNumber: 'CAF number', connectionDate: 'connection date' };
+          const displayNames = { planAmount: 'plan amount', ponNumber: 'PON number', cafNumber: 'CAF number', connectionDate: 'connection date', billingStartDate: 'billing reset date' };
           changedFields.push(displayNames[field] || field);
         }
       }
