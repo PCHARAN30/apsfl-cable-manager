@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext } from 'react'
 
 const LanguageContext = createContext()
 
@@ -70,7 +70,7 @@ const en = {
     carryOverNext: 'Carry-over next month',
     // Import
     importCustomers: 'Import Customers',
-    uploadSubtitle: 'Upload APSFL export — CSV, Excel, or TXT',
+    uploadSubtitle: 'Upload customer export — CSV, Excel, or TXT',
     expectedColumns: 'Expected Columns',
     dropFile: 'Drop file here or click to browse',
     importing: 'Importing...',
@@ -80,7 +80,7 @@ const en = {
     imported: 'Imported',
     skipped: 'Skipped',
     upToDate: 'Up to Date',
-    howToExport: 'How to export from APSFL',
+    howToExport: 'How to format export file',
     // Payments
     paymentHistory: 'Payment History',
     type: 'Type',
@@ -110,29 +110,21 @@ const en = {
     saveChanges: 'Save Changes',
     updating: 'Updating...',
     edit: 'Edit',
-}
-
-const te = {
-    dashboard: 'డాష్‌బోర్డ్',
-    customers: 'కస్టమర్లు',
-    payments: 'చెల్లింపులు',
-    searchCAF: 'CAF శోధన',
-    addCustomer: 'కస్టమర్‌ని జోడించండి',
-    pay: 'చెల్లించండి',
+    // Settings
+    settings: 'Settings',
+    generalSettings: 'General Settings',
+    companyName: 'Company Name',
+    subscriptionPlans: 'Subscription Plans',
+    planName: 'Plan Name',
+    addPlan: 'Add Plan',
+    saveSettings: 'Save Settings',
 }
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState(localStorage.getItem('apsfl_lang') || 'en')
-
-  useEffect(() => {
-    localStorage.setItem('apsfl_lang', lang)
-  }, [lang])
-
-  // Fallback to English if Telugu translation is missing
-  const t = (key) => (lang === 'te' && te[key]) ? te[key] : (en[key] || key)
+  const t = (key) => en[key] || key
 
   return (
-    <LanguageContext.Provider value={{ t, lang, setLang }}>
+    <LanguageContext.Provider value={{ t }}>
       {children}
     </LanguageContext.Provider>
   )

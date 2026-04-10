@@ -13,13 +13,18 @@ const {
   importCustomers,
 } = require("../controllers/customerController");
 
-router.get("/", getCustomers);
-router.get("/:id", getCustomerById);
-router.post("/", createCustomer);
-router.put("/:id", updateCustomer);
-router.delete("/:id", deleteCustomer);
-router.post('/bulk-delete', customerController.bulkDeleteCustomers);
-router.get('/pon-stats', customerController.getPonStats);
-router.post("/import", upload.single("file"), importCustomers);
+// ⚠️ SPECIFIC routes MUST come before /:id wildcard
+router.get('/pon-stats', getPonStats);
+router.post('/bulk-delete', bulkDeleteCustomers);
+router.post('/import', upload.single('file'), importCustomers);
+
+// General CRUD
+router.get('/', getCustomers);
+router.post('/', createCustomer);
+
+// /:id wildcard LAST — otherwise it shadows everything above
+router.get('/:id', getCustomerById);
+router.put('/:id', updateCustomer);
+router.delete('/:id', deleteCustomer);
 
 module.exports = router;

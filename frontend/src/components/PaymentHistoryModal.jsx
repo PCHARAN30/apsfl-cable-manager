@@ -79,10 +79,10 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
   const isPendingOverdue = pendingStart < new Date(new Date().setHours(0,0,0,0));
 
   const statusStyles = {
-    PAID: 'bg-[#ECFDF5] border-l-4 border-[#22C55E]',
-    PARTIAL: 'bg-amber-500/5 border-l-4 border-amber-500',
-    PENDING: 'bg-[#FEF3C7] border-l-4 border-[#F59E0B]',
-    EXPIRED: 'bg-[#FEE2E2] border-l-4 border-[#EF4444]',
+    PAID: 'bg-emerald-500/10 border-l-4 border-emerald-500',
+    PARTIAL: 'bg-amber-500/10 border-l-4 border-amber-500',
+    PENDING: 'bg-amber-500/10 border-l-4 border-amber-500',
+    EXPIRED: 'bg-red-500/10 border-l-4 border-red-500',
   }
 
   return (
@@ -141,7 +141,7 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
                 {!isSearching && (
                   <div className={`p-4 rounded-lg ${isPendingOverdue ? statusStyles.EXPIRED : statusStyles.PENDING}`}>
                     <div className="flex justify-between items-start">
-                      <div className="font-bold text-sm text-slate-700">
+                      <div className="font-bold text-sm text-[var(--text-base)]">
                         {formatDate(pendingStart)} → {formatDate(pendingEnd)}
                       </div>
                       <span className={`text-xs font-bold ${isPendingOverdue ? 'text-red-600' : 'text-amber-600'}`}>
@@ -164,7 +164,7 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
                   return (
                     <div key={p._id} className={`group p-4 rounded-lg relative ${isPartial ? statusStyles.PARTIAL : statusStyles.PAID}`}>
                       <div className="flex justify-between items-start">
-                        <div className="font-bold text-sm text-slate-700">
+                        <div className="font-bold text-sm text-[var(--text-base)]">
                           {isDebtOnly ? 'Debt / Partial Payment' : `${vfStr} → ${vtStr}`}
                         </div>
                         <span className={`text-xs font-bold ${isPartial ? 'text-amber-600' : 'text-green-600'}`}>

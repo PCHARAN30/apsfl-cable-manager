@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getCustomers } from '../services/api'
 import { useLang } from '../context/LanguageContext'
+import PaymentModal from '../components/PaymentModal'
 
 function ViewCustomerModal({ customer, onClose }) {
   if (!customer) return null;
@@ -19,7 +20,7 @@ function ViewCustomerModal({ customer, onClose }) {
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">CAF Number</span><div className="font-mono text-[var(--text-base)]">{customer.cafNumber}</div></div>
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Phone</span><div className="text-[var(--text-base)]">{customer.phone || 'NA'}</div></div>
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Address</span><div className="text-[var(--text-base)]">{customer.address || 'NA'}</div></div>
-          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Plan Amount</span><div className="font-mono text-[var(--text-base)]">₹{customer.planAmount || 300}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Package</span><div className="font-mono text-[var(--text-base)]">{customer.planName || 'HomeBasic'} (₹{customer.planAmount || 291})</div></div>
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">PON Number</span><div className="font-mono text-[var(--text-base)]">{customer.ponNumber || 'NA'}</div></div>
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Connection Date</span><div className="text-[var(--text-base)]">{customer.connectionDate ? new Date(customer.connectionDate).toLocaleDateString('en-IN') : 'NA/Unknown'}</div></div>
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Notes</span><div className="text-[var(--text-base)] whitespace-pre-wrap">
@@ -60,6 +61,7 @@ export default function SearchCAF() {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
   const [viewModal, setViewModal] = useState(null)
+  const [payModal, setPayModal] = useState(null)
   const inputRef = useRef(null)
 
   const fetchResults = async (searchQuery) => {
@@ -72,7 +74,7 @@ export default function SearchCAF() {
       const res = await getCustomers({ search: searchQuery, limit: 12 })
       setResults(res.data.data)
     } catch (err) {
-      console.error(err)
+      // Silent catch: User will see "No customers found" fallback
     } finally {
       setLoading(false)
     }
@@ -113,19 +115,31 @@ export default function SearchCAF() {
         ) : query && results.length === 0 ? (
           <div className="col-span-full text-center py-12 text-slate-500 bg-[var(--surface2)] border border-[var(--border-color)] rounded-2xl">No customers found matching "{query}"</div>
         ) : results.map(c => (
-          <div key={c._id} onClick={() => setViewModal(c)} className="bg-[var(--glass-bg)] border border-[var(--border-color)] p-5 rounded-2xl hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all cursor-pointer shadow-sm group">
+          <div key={c._id} onClick={() => setViewModal(c)} className="flex flex-col bg-[var(--glass-bg)] border border-[var(--border-color)] p-5 rounded-2xl hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all cursor-pointer shadow-sm group">
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-bold text-[var(--text-base)] text-lg group-hover:text-emerald-400 transition-colors">{c.name}</h3>
               <StatusBadge status={c.status} />
             </div>
-            <p className="font-mono text-sm text-slate-400 mb-1">CAF: <span className="text-[var(--text-base)]">{c.cafNumber}</span></p>
-            <p className="text-sm text-slate-400">Plan: <span className="font-mono text-[var(--text-base)]">₹{c.planAmount || 300}</span> {c.phone && `• Ph: ${c.phone}`}</p>
-            <p className="text-sm text-slate-400 mt-0.5">Conn. Date: <span className="text-[var(--text-base)]">{c.connectionDate ? new Date(c.connectionDate).toLocaleDateString('en-IN') : 'NA/Unknown'}</span></p>
+            <div className="flex-1">
+              <p className="font-mono text-sm text-slate-400 mb-1">CAF: <span className="text-[var(--text-base)]">{c.cafNumber}</span></p>
+              <p className="text-sm text-slate-400">Package: <span className="font-mono text-[var(--text-base)]">{c.planName || 'HomeBasic'}</span> {c.phone && `• Ph: ${c.phone}`}</p>
+              <p className="text-sm text-slate-400 mt-0.5 mb-4">Conn. Date: <span className="text-[var(--text-base)]">{c.connectionDate ? new Date(c.connectionDate).toLocaleDateString('en-IN') : 'NA/Unknown'}</span></p>
+            </div>
+            <div className="pt-4 border-t border-[var(--border-color)] flex gap-3 mt-auto">
+              <button onClick={(e) => { e.stopPropagation(); setPayModal(c) }} className="flex-1 py-3 text-sm font-bold rounded-xl text-white bg-[#22C55E] hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                Quick Pay
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); setViewModal(c) }} className="py-3 px-5 text-sm font-bold rounded-xl text-slate-600 dark:text-slate-300 bg-[var(--surface2)] hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                Details
+              </button>
+            </div>
           </div>
         ))}
       </div>
 
       {viewModal && <ViewCustomerModal customer={viewModal} onClose={() => setViewModal(null)} />}
+      {payModal && <PaymentModal customer={payModal} onClose={() => setPayModal(null)} onSuccess={() => fetchResults(query)} />}
     </div>
   )
 }

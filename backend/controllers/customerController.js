@@ -4,21 +4,21 @@ const csv = require("csv-parser");
 const XLSX = require("xlsx");
 const Customer = require("../models/Customer");
 const Payment = require("../models/Payment");
+const { calcValidTill } = require("../utils/dateUtils");
+const Settings = require("../models/Settings");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Add planMonths × 30 days to a base date
+ * Normalize PON Number to consistently format as 'PON-X'
  */
-const calcValidTill = (baseDate, planMonths = 1) => {
-  const d = new Date(baseDate);
-  const currentDay = d.getDate();
-  d.setMonth(d.getMonth() + planMonths);
-  if (d.getDate() !== currentDay) {
-    d.setDate(0);
-  }
-  d.setDate(d.getDate() - 1);
-  return d;
+const normalizePon = (pon) => {
+  if (pon === undefined || pon === null) return null;
+  let str = String(pon).trim().toUpperCase();
+  if (str === "") return null;
+  str = str.replace(/^(PON[-\s]*)+/i, '').trim(); // Strip 'PON', 'PON-', or 'PON ' from start
+  if (str === "") return null;
+  return `PON-${str}`;
 };
 
 /**
@@ -41,10 +41,12 @@ const normaliseRow = (row) => {
   const name = get("name", "customer name", "customername", "subscriber name");
   const phone = get("phone", "mobile", "mobile number", "contact", "phone number");
   const address = get("address", "addr", "location", "area", "full address");
+  const area = get("zone", "area", "ward", "village", "city");
   const ponNumber = get("pon", "pon number", "pon_number", "pon id");
   const cafNumber = get(
     "caf", "cafnumber", "caf number", "caf no", "caf_number", "caf id"
   );
+  const planName = get("plan", "package", "plan name", "package name");
   const connectionDateRaw = get("connection date", "join date", "date of connection", "connectiondate", "joindate");
   let connectionDate = null;
   if (connectionDateRaw) {
@@ -52,7 +54,7 @@ const normaliseRow = (row) => {
     if (!isNaN(parsed)) connectionDate = parsed;
   }
 
-  return { name, phone, address, cafNumber, connectionDate, ponNumber };
+  return { name, phone, address, area, cafNumber, connectionDate, ponNumber, planName };
 };
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
@@ -102,8 +104,9 @@ exports.getCustomerById = async (req, res) => {
 /** POST /api/customers  — create single customer manually */
 exports.createCustomer = async (req, res) => {
   try {
-    let { name, phone, address, cafNumber, planAmount, notes, connectionDate, ponNumber } = req.body;
+    let { name, phone, address, area, cafNumber, planName, notes, connectionDate, ponNumber, planAmount } = req.body;
     if (!connectionDate) connectionDate = null; // Prevent CastError for empty string
+    ponNumber = normalizePon(ponNumber);
     
     if (!name || !cafNumber) {
       return res.status(400).json({ success: false, message: "Name and CAF Number are required" });
@@ -124,7 +127,24 @@ exports.createCustomer = async (req, res) => {
       return res.status(409).json({ success: false, message: "CAF Number already exists" });
     }
 
-    const customer = await Customer.create({ name, phone, address, cafNumber, planAmount, notes, connectionDate, ponNumber });
+    const settings = await Settings.findOne();
+    const dynamicPlans = settings?.plans || [];
+
+    if (dynamicPlans.length === 0) {
+      return res.status(400).json({ success: false, message: "No packages defined in Settings. Please add a package first." });
+    }
+
+    const customPlan = dynamicPlans.find(p => p.name === planName);
+    if (planName && !customPlan) {
+      return res.status(400).json({ success: false, message: "Selected package is invalid. Please choose a package from Settings." });
+    }
+    
+    const defaultPlan = dynamicPlans.find(p => p.isDefault) || dynamicPlans[0];
+    const selectedPackage = customPlan 
+      ? { name: customPlan.name, price: customPlan.amount } 
+      : { name: defaultPlan.name, price: defaultPlan.amount };
+
+    const customer = await Customer.create({ name, phone, address, area, cafNumber, planName: selectedPackage.name, planAmount: selectedPackage.price, packageDetails: selectedPackage, notes, connectionDate, ponNumber });
     res.status(201).json({ success: true, data: customer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -134,10 +154,23 @@ exports.createCustomer = async (req, res) => {
 /** PUT /api/customers/:id  — update customer details */
 exports.updateCustomer = async (req, res) => {
   try {
-    const updates = (({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber, billingStartDate }) => ({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber, billingStartDate }))(req.body);
+    const updates = (({ name, phone, address, area, planName, notes, connectionDate, ponNumber, cafNumber, billingStartDate }) => ({ name, phone, address, area, planName, notes, connectionDate, ponNumber, cafNumber, billingStartDate }))(req.body);
     if ('connectionDate' in req.body && !updates.connectionDate) updates.connectionDate = null;
     if ('billingStartDate' in req.body && !updates.billingStartDate) updates.billingStartDate = null;
+    if ('ponNumber' in req.body) updates.ponNumber = normalizePon(updates.ponNumber);
     
+    if (updates.planName) {
+      const settings = await Settings.findOne();
+      const dynamicPlans = settings?.plans || [];
+      const customPlan = dynamicPlans.find(p => p.name === updates.planName);
+      if (!customPlan) {
+        return res.status(400).json({ success: false, message: "Selected package is invalid. Please choose a package from Settings." });
+      }
+      updates.planName = customPlan.name;
+      updates.planAmount = customPlan.amount;
+      updates.packageDetails = { name: customPlan.name, price: customPlan.amount };
+    }
+
     const existingCustomer = await Customer.findById(req.params.id);
     if (!existingCustomer) return res.status(404).json({ success: false, message: "Customer not found" });
 
@@ -153,7 +186,7 @@ exports.updateCustomer = async (req, res) => {
     }
 
     // Generate Auto-Note for tracked changes
-    const trackableFields = ['name', 'phone', 'address', 'planAmount', 'ponNumber', 'cafNumber', 'connectionDate', 'billingStartDate'];
+    const trackableFields = ['name', 'phone', 'address', 'area', 'planName', 'ponNumber', 'cafNumber', 'connectionDate', 'billingStartDate'];
     const changedFields = [];
 
     for (const field of trackableFields) {
@@ -171,7 +204,7 @@ exports.updateCustomer = async (req, res) => {
         }
 
         if (oldVal !== newVal) {
-          const displayNames = { planAmount: 'plan amount', ponNumber: 'PON number', cafNumber: 'CAF number', connectionDate: 'connection date', billingStartDate: 'billing reset date' };
+          const displayNames = { planName: 'package', ponNumber: 'PON number', cafNumber: 'CAF number', connectionDate: 'connection date', billingStartDate: 'billing reset date' };
           changedFields.push(displayNames[field] || field);
         }
       }
@@ -256,20 +289,38 @@ exports.importCustomers = async (req, res) => {
     let imported = 0;
     let skipped = 0;
     let errors = [];
+    
+    const settings = await Settings.findOne();
+    const dynamicPlans = settings?.plans || [];
 
     for (const row of rows) {
-      const { name, phone, address, cafNumber, connectionDate, ponNumber } = normaliseRow(row);
+      let { name, phone, address, area, cafNumber, connectionDate, ponNumber, planName } = normaliseRow(row);
+      ponNumber = normalizePon(ponNumber);
       if (!name || !cafNumber) {
         errors.push({ row, reason: "Missing name or CAF number" });
         skipped++;
         continue;
       }
 
+      const customPlan = dynamicPlans.find(p => p.name === planName);
+      const defaultPlan = dynamicPlans.find(p => p.isDefault) || dynamicPlans[0];
+      
+      if (!customPlan && !defaultPlan) {
+        errors.push({ row, reason: "No packages defined in Settings" });
+        skipped++;
+        continue;
+      }
+
+      const selectedPackage = customPlan 
+        ? { name: customPlan.name, price: customPlan.amount } 
+        : { name: defaultPlan.name, price: defaultPlan.amount };
+
       try {
         const result = await Customer.updateOne(
           { cafNumber: cafNumber.toUpperCase() },
           { $setOnInsert: { 
-            name, phone, address, cafNumber: cafNumber.toUpperCase(),
+            name, phone, address, area, cafNumber: cafNumber.toUpperCase(),
+            planName: selectedPackage.name, planAmount: selectedPackage.price, packageDetails: selectedPackage,
             ...(connectionDate && { connectionDate }),
             ...(ponNumber && { ponNumber })
           } },
@@ -326,9 +377,16 @@ exports.bulkDeleteCustomers = async (req, res) => {
 exports.getPonStats = async (req, res) => {
   try {
     const stats = await Customer.aggregate([
-      { $match: { ponNumber: { $exists: true, $ne: null, $ne: "" } } },
-      { $group: { _id: "$ponNumber", count: { $sum: 1 } } },
-      { $sort: { _id: 1 } }
+      { 
+        $match: { ponNumber: { $ne: null, $ne: "" } } 
+      },
+      { 
+        $group: { _id: "$ponNumber", used: { $sum: 1 } } 
+      },
+      { 
+        $project: { _id: 0, ponNumber: "$_id", used: 1, available: { $subtract: [128, "$used"] } } 
+      },
+      { $sort: { ponNumber: 1 } }
     ]);
     res.json({ success: true, data: stats });
   } catch (err) {

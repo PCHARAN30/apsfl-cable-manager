@@ -1,6 +1,6 @@
-# Dependencies
 node_modules/
-
-# Environment variables & Build output
 .env
-dist/
+uploads/
+*.7z
+*.zip
+Sample_customer_500.csv

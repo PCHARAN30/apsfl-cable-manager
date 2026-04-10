@@ -37,15 +37,16 @@ export default function PonDashboard() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-color)] text-sm">
-            {stats.map(s => {
-              const used = s.count;
-              const available = 128 - used;
+            {stats.filter(s => s.ponNumber != null && String(s.ponNumber).trim() !== '').map(s => {
+              const used = s.used;
+              const available = s.available;
               const isFull = used >= 128;
               const isWarning = used >= 115 && !isFull;
+              const ponId = String(s.ponNumber);
 
               return (
-                <tr key={s._id} className="hover:bg-[var(--glass-bg)] transition-colors">
-                  <td className="p-4 font-bold text-[var(--text-base)]">{s._id}</td>
+                <tr key={ponId} className="hover:bg-[var(--glass-bg)] transition-colors">
+                  <td className="p-4 font-bold text-[var(--text-base)]">{ponId}</td>
                   <td className="p-4 text-[var(--text-muted)]">{used} / 128</td>
                   <td className="p-4">
                     <span className={`font-mono font-bold ${isFull ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-emerald-400'}`}>

@@ -8,6 +8,7 @@ import Payments from './pages/Payments'
 import Import from './pages/Import'
 import Layout from './components/Layout'
 import SearchCAF from './pages/SearchCAF'
+import Settings from './pages/Settings'
 
 const Placeholder = ({ title }) => (
   <div className="page flex items-center justify-center min-h-[50vh]">
@@ -39,7 +40,6 @@ export default function App() {
         // Our backend returns { success: true, data: { username, role } }
         setUser(res.data.data) 
       } catch (err) {
-        console.debug('Session check failed:', err.message)
         // If it fails (e.g., 401 Not Authenticated), we keep user as null
         setUser(null)
       } finally {
@@ -74,6 +74,7 @@ export default function App() {
           <Route path="/search" element={<SearchCAF />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/import" element={<Import />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

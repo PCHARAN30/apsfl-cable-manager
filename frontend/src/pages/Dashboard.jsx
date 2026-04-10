@@ -87,9 +87,9 @@ export default function Dashboard() {
       </div>
 
       {/* Top stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
         {topCards.map((c, i) => (
-          <div key={i} className={`p-5 rounded-xl bg-white border border-slate-200 shadow-sm fade-up stagger-${i+1}`} title={c.tooltip}>
+          <div key={i} className={`p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-${i+1}`} title={c.tooltip}>
             <div className="flex items-start justify-between mb-3">
               <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)' }}>{c.label}</p>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:`${c.color}18` }}>
@@ -103,9 +103,9 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-4">
         {bottomCards.map((c, i) => (
-          <div key={i} className={`p-5 rounded-xl bg-white border border-slate-200 shadow-sm fade-up stagger-${i+5}`}>
+          <div key={i} className={`p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-${i+5}`}>
             <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:8 }}>{c.label}</p>
             <p style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:28, color:c.color }}>{c.value}</p>
             <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{c.sub}</p>
@@ -116,7 +116,7 @@ export default function Dashboard() {
       {/* Chart + expiring */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
         {/* Income chart */}
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm lg:col-span-2 fade-up stagger-5">
+        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm lg:col-span-2 fade-up stagger-5">
           <p style={{ fontWeight:600, color:'var(--text-base)', marginBottom:16, fontSize:15 }}>{t('incomeThisMonth')}</p>
           {chart.length === 0 ? (
             <div style={{ height:180, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-muted)', fontSize:14 }}>
@@ -135,7 +135,7 @@ export default function Dashboard() {
                 <XAxis dataKey="date" tick={{ fill:'var(--text-muted, #64748B)', fontSize:11 }} axisLine={false} tickLine={false}/>
                 <YAxis tick={{ fill:'var(--text-muted, #64748B)', fontSize:11 }} axisLine={false} tickLine={false}
                   tickFormatter={v=>`₹${v>=1000?(v/1000).toFixed(0)+'k':v}`}/>
-                <Tooltip contentStyle={{ background:'white', border:'1px solid #e2e8f0', borderRadius:12, fontSize:12, color:'#1E293B' }}
+                <Tooltip contentStyle={{ background:'var(--bg-surface)', border:'1px solid var(--border-color)', borderRadius:12, fontSize:12, color:'var(--text-base)' }}
                   labelStyle={{ color:'var(--text-muted)' }} formatter={v=>[`₹${v.toLocaleString('en-IN')}`,'Income']}/>
                 <Area type="monotone" dataKey="income" stroke="#22C55E" strokeWidth={2.5}
                   fill="url(#g)" dot={false} activeDot={{ r:5, fill:'#22C55E', stroke:'white', strokeWidth:2 }}/>
@@ -145,7 +145,7 @@ export default function Dashboard() {
         </div>
 
         {/* Expiring soon */}
-        <div className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm fade-up stagger-6">
+        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-6">
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
             <span className="pulse-dot" />
             <p style={{ fontWeight:600, color:'var(--text-base)', fontSize:14 }}>{t('expiringIn7Days')}</p>
@@ -157,7 +157,7 @@ export default function Dashboard() {
               {expiring.map(c => {
                 const days = Math.ceil((new Date(c.validTill)-new Date())/86400000)
                 return (
-                  <div key={c._id} className="bg-slate-50 border border-slate-200 rounded-lg" style={{ padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <div key={c._id} className="bg-[var(--surface2)] border border-[var(--border-color)] rounded-lg" style={{ padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <div>
                       <p style={{ fontSize:13, fontWeight:500, color:'var(--text-base)' }}>{c.name}</p>
                       <p style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'JetBrains Mono,monospace' }}>{c.cafNumber}</p>
@@ -176,7 +176,7 @@ export default function Dashboard() {
 
       {/* Progress bar */}
       {total > 0 && (
-        <div className="p-6 mt-4 rounded-xl bg-white border border-slate-200 shadow-sm fade-up stagger-7">
+        <div className="p-6 mt-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-7">
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:'var(--text-muted)', marginBottom:10 }}>
             <span>{t('collectionProgress')}</span>
             <span style={{ fontWeight:600, color:'#22C55E' }}>{paidPct}% {t('collected')}</span>

@@ -9,6 +9,7 @@ export default function Payments() {
   const { t } = useLang()
   const [payments, setPayments] = useState([])
   const [total, setTotal]       = useState(0)
+  const [totalAmt, setTotalAmt] = useState(0)
   const [loading, setLoading]   = useState(true)
   const [from, setFrom]         = useState('')
   const [to, setTo]             = useState('')
@@ -22,12 +23,17 @@ export default function Payments() {
       if (from) params.from = from
       if (to)   params.to   = to
       const res = await getAllPayments(params)
-      setPayments(res.data.data); setTotal(res.data.total)
+      setPayments(res.data.data)
+      setTotal(res.data.total)
+      setTotalAmt(res.data.totalAmount)
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }
   }
 
-  useEffect(()=>{ load() }, [page])
+  useEffect(() => {
+    const t = setTimeout(load, 300)
+    return () => clearTimeout(t)
+  }, [page, from, to])
 
   const handleDelete = async (p) => {
     if (!window.confirm(`Delete entire payment of ₹${p.amountPaid} for ${p.customerName}?\n\nThis will reverse their validity by ${p.planMonths} month(s).`)) return
@@ -37,8 +43,6 @@ export default function Payments() {
       load()
     } catch (err) { toast.error(err.response?.data?.message || 'Delete failed') }
   }
-
-  const totalAmt = payments.reduce((s,p)=>s+p.amountPaid, 0)
 
   return (
     <div className="page">
@@ -62,8 +66,6 @@ export default function Payments() {
           <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('to')}</label>
           <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
         </div>
-        <button onClick={()=>{ setPage(1); load() }} className="btn-primary">{t('filter')}</button>
-        {(from||to) && <button onClick={()=>{ setFrom(''); setTo(''); setPage(1); setTimeout(load,100) }} className="btn-secondary">{t('clear')}</button>}
       </div>
 
       {/* Table */}

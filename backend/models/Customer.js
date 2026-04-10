@@ -17,6 +17,11 @@ const customerSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    area: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     cafNumber: {
       type: String,
       required: [true, "CAF number is required"],
@@ -47,9 +52,18 @@ const customerSchema = new mongoose.Schema(
     },
 
     // --- Plan & Amount ---
+    planName: {
+      type: String,
+      trim: true,
+      default: "HomeBasic",
+    },
     planAmount: {
       type: Number,
-      default: 300, // default monthly plan amount in ₹
+      default: 291, // default monthly plan amount in ₹
+    },
+    packageDetails: {
+      type: Object,
+      default: {},
     },
     planMonths: {
       type: Number,

@@ -73,6 +73,7 @@ Frontend runs on: `http://localhost:5173`
 ## 🔌 API Reference
 
 ### Customers
+
 | Method | Endpoint                    | Description              |
 |--------|-----------------------------|--------------------------|
 | GET    | `/api/customers`            | List all (+ search/filter) |
@@ -83,11 +84,13 @@ Frontend runs on: `http://localhost:5173`
 | POST   | `/api/customers/import`     | Bulk import CSV/XLSX     |
 
 **Query params for GET /api/customers:**
+
 - `search` — name / CAF / phone
 - `status` — PAID | UNPAID | PARTIAL
 - `page`, `limit`
 
 ### Payments
+
 | Method | Endpoint                        | Description           |
 |--------|---------------------------------|-----------------------|
 | POST   | `/api/payments/mark/:customerId` | Record payment       |
@@ -96,6 +99,7 @@ Frontend runs on: `http://localhost:5173`
 | GET    | `/api/payments/all`             | All payments (+ date range) |
 
 **POST /api/payments/mark/:id — Body:**
+
 ```json
 {
   "paymentType": "FULL",     // or "PARTIAL"
@@ -106,6 +110,7 @@ Frontend runs on: `http://localhost:5173`
 ```
 
 ### Dashboard
+
 | Method | Endpoint                      | Description              |
 |--------|-------------------------------|--------------------------|
 | GET    | `/api/dashboard/stats`        | All KPIs                 |

@@ -1,16 +1,6 @@
 const Customer = require("../models/Customer");
 const Payment = require("../models/Payment");
-
-const calcValidTill = (baseDate, planMonths = 1) => {
-  const d = new Date(baseDate);
-  const currentDay = d.getDate();
-  d.setMonth(d.getMonth() + planMonths);
-  if (d.getDate() !== currentDay) {
-    d.setDate(0); // Clamp to end of target month if it overflowed (e.g., Jan 31 -> Feb 28)
-  }
-  d.setDate(d.getDate() - 1);
-  return d;
-};
+const { calcValidTill } = require("../utils/dateUtils");
 
 // ─── Mark Payment ─────────────────────────────────────────────────────────────
 
@@ -254,12 +244,17 @@ exports.getAllPayments = async (req, res) => {
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const [payments, total] = await Promise.all([
+    const [payments, total, totalAmountAgg] = await Promise.all([
       Payment.find(query).lean().sort({ paymentDate: -1 }).skip(skip).limit(parseInt(limit)),
       Payment.countDocuments(query),
+      Payment.aggregate([
+        { $match: query },
+        { $group: { _id: null, sum: { $sum: '$amountPaid' } } }
+      ])
     ]);
 
-    res.json({ success: true, total, data: payments });
+    const totalAmount = totalAmountAgg[0]?.sum || 0;
+    res.json({ success: true, total, totalAmount, data: payments });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

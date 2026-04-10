@@ -13,6 +13,9 @@ exports.resetDashboard = async (req, res) => {
           lastPaymentDate: null,
           validTill: null,
           planMonths: 1,
+          isMigrated: false,
+          billingStartDate: null,
+          notes: '',
         }
       }),
       Payment.deleteMany({}),

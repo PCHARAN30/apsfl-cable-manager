@@ -10,10 +10,10 @@ import EditCustomerModal from '../components/EditCustomerModal'
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'
 
 const StatusBadge = ({ status }) => {
-  const cls = { PAID:'bg-green-100 text-green-700', UNPAID:'bg-red-100 text-red-700', PARTIAL:'bg-amber-100 text-amber-700' }
+  const cls = { PAID:'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20', UNPAID:'bg-red-500/10 text-red-500 border border-red-500/20', PARTIAL:'bg-amber-500/10 text-amber-500 border border-amber-500/20' }
   const dot = { PAID:'#22C55E', UNPAID:'#EF4444', PARTIAL:'#F59E0B' }
   return (
-    <span className={`px-2 py-1 text-xs font-bold rounded-md flex items-center gap-1.5 w-max ${cls[status]||'bg-red-100 text-red-700'}`}>
+    <span className={`px-2 py-1 text-xs font-bold rounded-md flex items-center gap-1.5 w-max ${cls[status]||cls.UNPAID}`}>
       <span style={{ width:5, height:5, borderRadius:'50%', background:dot[status], display:'inline-block' }}/>
       {status}
     </span>
@@ -44,10 +44,11 @@ export default function Customers() {
   const loadPonStats = () => {
     getPonStats()
       .then(res => {
-        setAvailablePons(res.data.data.map(s => s._id));
-        setPonStats(new Map(res.data.data.map(s => [s._id, s.count])));
+        const data = res.data.data.filter(s => s.ponNumber != null && String(s.ponNumber).trim() !== '');
+        setAvailablePons(data.map(s => String(s.ponNumber)));
+        setPonStats(new Map(data.map(s => [String(s.ponNumber), s.used])));
       })
-      .catch(console.error)
+      .catch(() => {})
   }
 
   useEffect(() => {
@@ -185,8 +186,8 @@ export default function Customers() {
         </div>
       )}
 
-      {/* Table */}
-      <div className={`fade-up stagger-2 ${selectedIds.length > 0 ? 'mt-4' : 'mt-6'} rounded-2xl glass-panel overflow-hidden`}>
+      {/* Desktop Table View */}
+      <div className={`hidden md:block fade-up stagger-2 ${selectedIds.length > 0 ? 'mt-4' : 'mt-6'} rounded-2xl glass-panel overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="tbl">
             <thead>
@@ -218,10 +219,10 @@ export default function Customers() {
               ) : customers.map((c, idx) => {
                 const days = c.validTill ? Math.ceil((new Date(c.validTill)-new Date())/86400000) : null
                 const expiring = days !== null && days <= 5 && days > 0 && c.status !== 'UNPAID'
-                const isExpired = c.status === 'UNPAID' || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
+                const isExpired = (c.status === 'UNPAID' && c.validTill !== null) || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
                 
                 return (
-                  <tr key={c._id} className={`tbl-row ${isExpired ? 'bg-red-50 dark:bg-red-900/20' : expiring ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}>
+                  <tr key={c._id} className={`tbl-row border-l-4 ${isExpired ? 'bg-red-500/10 border-red-500' : expiring ? 'bg-amber-500/10 border-amber-500' : 'border-transparent'}`}>
                     <td className="tbl-cell" style={{ textAlign: 'center' }}>
                       <input 
                         type="checkbox"
@@ -232,13 +233,13 @@ export default function Customers() {
                     </td>
                     <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + idx + 1}</td>
                     <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>
-                      {c.name} <span style={{ fontSize:11, color:'var(--text-muted)', fontWeight:'normal', marginLeft:4 }}>({c.cafNumber})</span>
+                      {c.name}
                       {expiring && <span style={{ marginLeft:6, fontSize:11, color:'#fbbf24', fontFamily:'JetBrains Mono,monospace' }}>⚠{days}d</span>}
                     </td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{c.cafNumber}</td>
                     <td className="tbl-cell">{c.phone||'NA'}</td>
                     <td className="tbl-cell" style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.address||'NA'}</td>
-                    <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', color:'var(--text-base)' }}>₹{c.planAmount||300}</td>
+                    <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', color:'var(--text-base)' }}>₹{c.planAmount||291}</td>
                     <td className="tbl-cell"><StatusBadge status={c.status}/></td>
                     <td className="tbl-cell" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>{fmtDate(c.lastPaymentDate)}</td>
                     <td className="tbl-cell" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace', color: days&&days<0?'#f87171':'var(--text-muted)' }}>
@@ -275,20 +276,95 @@ export default function Customers() {
             </tbody>
           </table>
         </div>
-        
-        {/* Pagination Controls */}
-        {total > limit && (
-          <div className="p-4 border-t border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
-            <span style={{ fontSize:13, color:'var(--text-muted)' }}>
-              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
-            </span>
-            <div className="flex gap-2">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
-              <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Card View */}
+      <div className={`md:hidden fade-up stagger-2 flex flex-col gap-4 ${selectedIds.length > 0 ? 'mt-4' : 'mt-6'}`}>
+        {loading ? (
+          [...Array(4)].map((_,i) => <div key={i} className="skeleton h-40 rounded-2xl w-full"/>)
+        ) : customers.length === 0 ? (
+          <div className="text-center py-12 text-slate-500 bg-[var(--surface2)] rounded-2xl border border-[var(--border-color)]">{t('noCustomers')}</div>
+        ) : customers.map((c) => {
+          const days = c.validTill ? Math.ceil((new Date(c.validTill)-new Date())/86400000) : null
+          const expiring = days !== null && days <= 5 && days > 0 && c.status !== 'UNPAID'
+          const isExpired = (c.status === 'UNPAID' && c.validTill !== null) || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
+          
+          return (
+            <div key={c._id} className={`relative p-4 rounded-xl border shadow-sm border-l-4 ${isExpired ? 'border-l-red-500 bg-red-500/10 border-red-500/20' : expiring ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20' : 'border-l-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)]'}`}>
+              {/* Top: Name & Checkbox */}
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-start gap-3">
+                  <input 
+                    type="checkbox"
+                    className="w-4 h-4 mt-0.5 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                    checked={selectedIds.includes(c._id)}
+                    onChange={() => toggleSelect(c._id)}
+                  />
+                  <div>
+                    <h3 className="font-bold text-[var(--text-base)] text-base leading-tight">{c.name}</h3>
+                    <p className="text-xs text-slate-500 font-mono mt-1">{c.cafNumber} {c.phone && `| 📞 ${c.phone}`}</p>
+                  </div>
+                </div>
+                <StatusBadge status={c.status} />
+              </div>
+              
+              {/* Middle: Details */}
+              <div className="grid grid-cols-2 gap-y-3 mb-4 text-sm mt-4 pl-7">
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Package</p>
+                  <p className="font-mono font-medium text-[var(--text-base)]">₹{c.planAmount||291} <span className="text-xs text-slate-400">| PON: {c.ponNumber||'NA'}</span></p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Balance</p>
+                  <p className="font-mono font-medium text-amber-500">{c.carryOver>0 ? `₹${c.carryOver}` : 'Nil'}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
+                  <p className="font-mono text-slate-600 dark:text-slate-300">{fmtDate(c.lastPaymentDate)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
+                  <p className={`font-mono ${isExpired ? 'text-red-500 font-bold' : 'text-slate-600 dark:text-slate-300'}`}>{fmtDate(c.validTill)}</p>
+                </div>
+              </div>
+
+              {/* Bottom: Actions */}
+              <div className="pt-4 border-t border-[var(--border-color)]">
+                <button onClick={()=>setPayModal(c)} className="w-full py-3 mb-3 text-sm font-bold rounded-xl text-white bg-[#22C55E] hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                  {t('pay')}
+                </button>
+                <div className="flex items-center gap-2">
+                  <button onClick={()=>setEditModal(c)} className="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                    {t('edit')}
+                  </button>
+                  <button onClick={()=>setHistoryModal(c)} className="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    View
+                  </button>
+                  <button onClick={()=>handleDelete(c)} disabled={deleting===c._id} className="p-2.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Pagination Controls */}
+      {total > limit && (
+        <div className="mt-4 p-4 rounded-xl border border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
+          <span style={{ fontSize:13, color:'var(--text-muted)' }}>
+            Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
+          </span>
+          <div className="flex gap-2">
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
+            <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
+          </div>
+        </div>
+      )}
 
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
       {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}

@@ -55,8 +55,9 @@ export const resetDashboard   = () => api.post('/dashboard/reset')
 // ── getMonthlyChart ───────────────────────────────────────────────────────────────────────
 export const getMonthlyChart = (year) => api.get('/dashboard/monthly-chart', { params: { year } })
 
-// ── getYearlyChart ───────────────────────────────────────────────────────────────────────
-export const getYearlyChart = () => api.get('/dashboard/yearly')
+// ── Settings ───────────────────────────────────────────────────────────────────
+export const getSettings = () => api.get('/settings')
+export const updateSettings = (data) => api.put('/settings', data)
 
 // ── auth ───────────────────────────────────────────────────────────────
 export const signup = (data) => api.post('/auth/signup', data)

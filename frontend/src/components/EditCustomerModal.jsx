@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { updateCustomer } from '../services/api'
+import { updateCustomer, getSettings } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 
 export default function EditCustomerModal({ customer, onClose, onSuccess, ponStats }) {
@@ -17,15 +17,32 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
     name: customer.name || '', 
     phone: customer.phone || '', 
     address: customer.address || '', 
-    planAmount: customer.planAmount || 300, 
+    area: customer.area || '', 
+    planName: customer.planName || 'HomeBasic',
     notes: initialUserNotes, 
     connectionDate: customer.connectionDate ? customer.connectionDate.split('T')[0] : '',
     billingStartDate: customer.billingStartDate ? customer.billingStartDate.split('T')[0] : '',
     ponNumber: customer.ponNumber || '',
     cafNumber: customer.cafNumber || ''
   })
+  const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(false)
   const set = (k,v) => setForm(f=>({...f,[k]:v}))
+
+  useEffect(() => {
+    getSettings().then(res => {
+      if (res.data?.data?.plans?.length > 0) {
+        const loadedPlans = res.data.data.plans;
+        setPlans(loadedPlans);
+        if (!loadedPlans.some(p => p.name === customer.planName)) {
+          const defaultPlan = loadedPlans.find(p => p.isDefault) || loadedPlans[0];
+          setForm(f => ({ ...f, planName: defaultPlan.name }));
+        }
+      }
+    }).catch(() => {});
+  }, []);
+
+  const allPackages = plans.map(p => ({ name: p.name, price: p.amount }));
 
   const handleSubmit = async () => {
     if (!form.name.trim()) { toast.error('Name is required'); return }
@@ -93,13 +110,23 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
             { label:t('cafNumberLabel') || 'CAF Number', key:'cafNumber', placeholder:'e.g. CAF100123', type:'text', mono:true },
             { label:t('phoneNumber'), key:'phone', placeholder:'10-digit number', type:'text' },
             { label:t('connectionDate') || 'Date of Connection', key:'connectionDate', placeholder:'', type:'date' },
-            { label:t('monthlyPlan'), key:'planAmount', placeholder:'300', type:'number', mono:true },
-            { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text', fullWidth: true },
+            { label:t('monthlyPlan') || 'Package', key:'planName', type:'planSelect' },
+            { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text' },
+            { label:t('area') || 'Area / Zone', key:'area', placeholder:'e.g. North Zone', type:'text' },
           ].map(f => (
             <div key={f.key} className={f.fullWidth ? "md:col-span-2" : ""}>
               <span style={lbl}>{f.label}</span>
-              <input type={f.type} className="input" style={f.mono?{fontFamily:'JetBrains Mono,monospace'}:{}}
-                value={form[f.key]} onChange={e=>set(f.key, e.target.value)} placeholder={f.placeholder}/>
+              {f.type === 'planSelect' ? (
+                <select className="input w-full" style={{fontFamily:'JetBrains Mono,monospace'}} value={form.planName} onChange={e => set('planName', e.target.value)}>
+                  {allPackages.length === 0 && <option value="" disabled>No packages configured</option>}
+                  {allPackages.map(pkg => (
+                    <option key={pkg.name} value={pkg.name}>{pkg.name} - ₹{pkg.price}</option>
+                  ))}
+                </select>
+              ) : (
+                <input type={f.type} className="input" style={f.mono?{fontFamily:'JetBrains Mono,monospace'}:{}}
+                  value={form[f.key]} onChange={e=>set(f.key, e.target.value)} placeholder={f.placeholder}/>
+              )}
               {f.warning && (
                 <p className="text-xs text-amber-500 mt-1.5 font-medium">{f.warning}</p>
               )}
