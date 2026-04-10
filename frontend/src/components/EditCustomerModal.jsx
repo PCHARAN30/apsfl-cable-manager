@@ -6,13 +6,19 @@ import { useLang } from '../context/LanguageContext'
 export default function EditCustomerModal({ customer, onClose, onSuccess, ponStats }) {
   const { t } = useLang()
   
+  // Separate user notes from system logs
+  const allNotes = customer.notes || '';
+  const noteLines = allNotes.split('\n');
+  const initialUserNotes = noteLines.filter(l => !l.trim().startsWith('[System:')).join('\n');
+  const systemLogs = noteLines.filter(l => l.trim().startsWith('[System:'));
+
   // Initialize form with customer's existing data
   const [form, setForm] = useState({ 
     name: customer.name || '', 
     phone: customer.phone || '', 
     address: customer.address || '', 
     planAmount: customer.planAmount || 300, 
-    notes: customer.notes || '', 
+    notes: initialUserNotes, 
     connectionDate: customer.connectionDate ? customer.connectionDate.split('T')[0] : '',
     ponNumber: customer.ponNumber || '',
     cafNumber: customer.cafNumber || ''
@@ -28,8 +34,16 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
       return;
     }
     setLoading(true)
+
+    // Re-attach system logs to the payload without allowing them to be edited
+    const payload = { ...form };
+    if (systemLogs.length > 0) {
+      const trimmedNotes = payload.notes.trim();
+      payload.notes = trimmedNotes ? `${trimmedNotes}\n${systemLogs.join('\n')}` : systemLogs.join('\n');
+    }
+
     try { 
-      await updateCustomer(customer._id, form); 
+      await updateCustomer(customer._id, payload); 
       toast.success('Customer updated!'); 
       onSuccess(); 
       onClose() 
@@ -75,7 +89,6 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
             { label:t('connectionDate') || 'Date of Connection', key:'connectionDate', placeholder:'', type:'date' },
             { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text' },
             { label:t('monthlyPlan'), key:'planAmount', placeholder:'300', type:'number', mono:true },
-            { label:t('notesLabel'), key:'notes', placeholder:'Optional', type:'text' },
           ].map(f => (
             <div key={f.key}>
               <span style={lbl}>{f.label}</span>
@@ -86,6 +99,26 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
               )}
             </div>
           ))}
+
+          {/* Notes Section */}
+          <div>
+            <span style={lbl}>{t('notesLabel') || 'Notes'}</span>
+            <textarea
+              className="input w-full"
+              style={{ minHeight: '80px', resize: 'vertical' }}
+              value={form.notes}
+              onChange={e => set('notes', e.target.value)}
+              placeholder="Optional operator notes..."
+            />
+            {systemLogs.length > 0 && (
+              <div className="mt-2 bg-[var(--surface2)] p-3 rounded-lg border border-[var(--border-color)]">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">System Logs</span>
+                {systemLogs.map((log, i) => (
+                  <span key={i} className="block text-indigo-400 text-xs italic mt-0.5">{log}</span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div style={{ display:'flex', gap:10, marginTop:20 }}>
           <button onClick={onClose} className="btn-secondary" style={{ flex:1 }}>{t('cancel')}</button>
