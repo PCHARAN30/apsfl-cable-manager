@@ -132,18 +132,61 @@ exports.updateCustomer = async (req, res) => {
     const updates = (({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber }) => ({ name, phone, address, planAmount, notes, connectionDate, ponNumber, cafNumber }))(req.body);
     if (!updates.connectionDate) updates.connectionDate = null; // Prevent CastError
     
+    const existingCustomer = await Customer.findById(req.params.id);
+    if (!existingCustomer) return res.status(404).json({ success: false, message: "Customer not found" });
+
     // PON capacity check if PON is being modified
-    if (updates.ponNumber) {
+    if (updates.ponNumber && existingCustomer.ponNumber !== updates.ponNumber) {
       if (!/^[a-zA-Z0-9-]+$/.test(updates.ponNumber)) {
         return res.status(400).json({ success: false, message: "PON Number must be alphanumeric (e.g., PON2, 2)" });
       }
-      const existingCustomer = await Customer.findById(req.params.id);
-      if (existingCustomer && existingCustomer.ponNumber !== updates.ponNumber) {
-        const count = await Customer.countDocuments({ ponNumber: updates.ponNumber });
-        if (count >= 128) {
-          return res.status(400).json({ success: false, message: "PON is full (128 connections reached)" });
+      const count = await Customer.countDocuments({ ponNumber: updates.ponNumber });
+      if (count >= 128) {
+        return res.status(400).json({ success: false, message: "PON is full (128 connections reached)" });
+      }
+    }
+
+    // Generate Auto-Note for tracked changes
+    const trackableFields = ['name', 'phone', 'address', 'planAmount', 'ponNumber', 'cafNumber', 'connectionDate'];
+    const changedFields = [];
+
+    for (const field of trackableFields) {
+      if (updates[field] !== undefined) {
+        let oldVal = existingCustomer[field];
+        let newVal = updates[field];
+        
+        // Handle date formatting for accurate comparison
+        if (field === 'connectionDate') {
+          oldVal = oldVal ? new Date(oldVal).toDateString() : '';
+          newVal = newVal ? new Date(newVal).toDateString() : '';
+        } else {
+          oldVal = oldVal ? String(oldVal) : '';
+          newVal = newVal ? String(newVal) : '';
+        }
+
+        if (oldVal !== newVal) {
+          const displayNames = { planAmount: 'plan amount', ponNumber: 'PON number', cafNumber: 'CAF number', connectionDate: 'connection date' };
+          changedFields.push(displayNames[field] || field);
         }
       }
+    }
+
+    if (changedFields.length > 0) {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-IN");
+      const timeStr = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+      const autoNote = `[System: ${changedFields.join(', ')} updated on ${dateStr} at ${timeStr}]`;
+      
+      // Safely append to frontend notes or existing db notes
+      const baseNotes = updates.notes !== undefined ? String(updates.notes) : String(existingCustomer.notes || '');
+      const lines = baseNotes.split('\n');
+      const userNotes = lines.filter(line => !line.trim().startsWith('[System:'));
+      const systemLogs = lines.filter(line => line.trim().startsWith('[System:'));
+      
+      const recentLogs = systemLogs.slice(-4); // Keep only the last 4 system logs
+      recentLogs.push(autoNote); // Add the new one to make it 5 max
+      
+      updates.notes = userNotes.join('').trim() === '' ? recentLogs.join('\n') : userNotes.join('\n') + '\n' + recentLogs.join('\n');
     }
 
     const customer = await Customer.findByIdAndUpdate(req.params.id, updates, {

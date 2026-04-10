@@ -21,8 +21,14 @@ function ViewCustomerModal({ customer, onClose }) {
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Address</span><div className="text-[var(--text-base)]">{customer.address || 'NA'}</div></div>
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Plan Amount</span><div className="font-mono text-[var(--text-base)]">₹{customer.planAmount || 300}</div></div>
           <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">PON Number</span><div className="font-mono text-[var(--text-base)]">{customer.ponNumber || 'NA'}</div></div>
-          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Connection Date</span><div className="text-[var(--text-base)]">{customer.connectionDate ? new Date(customer.connectionDate).toLocaleDateString() : 'NA'}</div></div>
-          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Notes</span><div className="text-[var(--text-base)]">{customer.notes || 'NA'}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Connection Date</span><div className="text-[var(--text-base)]">{customer.connectionDate ? new Date(customer.connectionDate).toLocaleDateString('en-IN') : 'NA/Unknown'}</div></div>
+          <div><span className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Notes</span><div className="text-[var(--text-base)] whitespace-pre-wrap">
+            {customer.notes ? customer.notes.split('\n').map((line, i) => (
+              line.trim().startsWith('[System:') 
+                ? <span key={i} className="block text-indigo-400 text-xs italic mt-0.5">{line}</span>
+                : <span key={i} className="block">{line}</span>
+            )) : 'NA'}
+          </div></div>
         </div>
         <div className="mt-8">
           <button onClick={onClose} className="btn-secondary w-full">Close</button>
@@ -114,6 +120,7 @@ export default function SearchCAF() {
             </div>
             <p className="font-mono text-sm text-slate-400 mb-1">CAF: <span className="text-[var(--text-base)]">{c.cafNumber}</span></p>
             <p className="text-sm text-slate-400">Plan: <span className="font-mono text-[var(--text-base)]">₹{c.planAmount || 300}</span> {c.phone && `• Ph: ${c.phone}`}</p>
+            <p className="text-sm text-slate-400 mt-0.5">Conn. Date: <span className="text-[var(--text-base)]">{c.connectionDate ? new Date(c.connectionDate).toLocaleDateString('en-IN') : 'NA/Unknown'}</span></p>
           </div>
         ))}
       </div>
