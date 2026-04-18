@@ -34,7 +34,6 @@ export default function Layout({ onLock, children }) {
   const navItems = [
     { path: '/', label: t('dashboard'), icon: IcoDash },
     { path: '/customers', label: t('customers'), icon: IcoUsers },
-    { path: '/search', label: t('searchCAF'), icon: IcoSearch },
     { path: '/payments', label: t('payments'), icon: IcoPay },
     { path: '/import', label: t('importCSV'), icon: IcoImport },
     { path: '/settings', label: t('settings') || 'Settings', icon: IcoSettings },
@@ -45,6 +44,10 @@ export default function Layout({ onLock, children }) {
 
       {/* Global Top-Right Controls */}
       <div className="absolute top-3 right-4 md:top-6 md:right-8 z-40 flex items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-md">
+        <Link to="/search" className="text-slate-700 dark:text-slate-300 hover:text-blue-500 transition-colors flex items-center justify-center" title="Search Customers">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        </Link>
+        <div className="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
         <button onClick={() => setProfileModal(true)} className="md:hidden text-slate-700 dark:text-slate-300 hover:text-emerald-500 transition-colors flex items-center justify-center">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
         </button>
