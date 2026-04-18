@@ -225,13 +225,13 @@ exports.updateCustomer = async (req, res) => {
       const recentLogs = systemLogs.slice(-4); // Keep only the last 4 system logs
       recentLogs.push(autoNote); // Add the new one to make it 5 max
       
-      updates.notes = userNotes.join('').trim() === '' ? recentLogs.join('\n') : userNotes.join('\n') + '\n' + recentLogs.join('\n');
+      updates.notes = userNotes.join('\n').trim() === '' ? recentLogs.join('\n') : userNotes.join('\n') + '\n' + recentLogs.join('\n');
     }
 
     const customer = await Customer.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
-    }).lean();
+    });
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
     res.json({ success: true, data: customer });
   } catch (err) {

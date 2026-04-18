@@ -96,9 +96,9 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[
-            { label:t('customerName'), key:'name', placeholder:'Full name', type:'text' },
+            { label:t('customerName'), key:'name', placeholder:'Full name', type:'text' }, // t('customerName') is 'Customer Name *'
             { 
-              label:t('ponNumber') || 'PON Number', 
+              label:t('ponNumber'), 
               key:'ponNumber', 
               placeholder:'e.g. PON-1', 
               type:'text', 
@@ -107,12 +107,12 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
                 ? `PON Full (${ponStats.get(form.ponNumber)}/128)` 
                 : null
             },
-            { label:t('cafNumberLabel') || 'CAF Number', key:'cafNumber', placeholder:'e.g. CAF100123', type:'text', mono:true },
-            { label:t('phoneNumber'), key:'phone', placeholder:'10-digit number', type:'text' },
-            { label:t('connectionDate') || 'Date of Connection', key:'connectionDate', placeholder:'', type:'date' },
-            { label:t('monthlyPlan') || 'Package', key:'planName', type:'planSelect' },
-            { label:t('address') || 'Address', key:'address', placeholder:'Full address', type:'text' },
-            { label:t('area') || 'Area / Zone', key:'area', placeholder:'e.g. North Zone', type:'text' },
+            { label:t('cafNumberLabel'), key:'cafNumber', placeholder:'e.g. CAF100123', type:'text', mono:true },
+            { label:t('phoneNumber'), key:'phone', placeholder:'10-digit number', type:'text' }, // t('phoneNumber') is 'Phone Number'
+            { label:t('connectionDate'), key:'connectionDate', placeholder:'', type:'date' },
+            { label:t('monthlyPlan'), key:'planName', type:'planSelect' }, // t('monthlyPlan') is 'Monthly Plan Amount (₹)'
+            { label:t('address'), key:'address', placeholder:'Full address', type:'text' },
+            { label:t('area'), key:'area', placeholder:'e.g. North Zone', type:'text' },
           ].map(f => (
             <div key={f.key} className={f.fullWidth ? "md:col-span-2" : ""}>
               <span style={lbl}>{f.label}</span>
@@ -159,7 +159,7 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
 
           {/* Notes Section */}
           <div className="md:col-span-2">
-            <span style={lbl}>{t('notesLabel') || 'Notes'}</span>
+            <span style={lbl}>{t('notesLabel')}</span>
             <textarea
               className="input w-full"
               style={{ minHeight: '80px', resize: 'vertical' }}
