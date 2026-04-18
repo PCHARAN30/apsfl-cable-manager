@@ -49,35 +49,38 @@ export default function Payments() {
   }
 
   return (
-    <div className="page">
-      <div className="fade-up flex flex-wrap items-center justify-between gap-3" style={{ marginBottom:4 }}>
-        <div>
-          <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('paymentHistory')}</h1>
-          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
+    <div className="page !mt-0 !pt-0">
+      {/* Top Section (Sticky Container) */}
+      <div className="sticky top-0 z-40 bg-[var(--bg-base)] pb-3 -mt-4 pt-3 -mx-4 px-4 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8 border-b border-[var(--border-color)] shadow-sm md:shadow-none">
+        <div className="fade-up flex flex-wrap items-center justify-between gap-2 md:gap-3 mb-2 md:mb-1">
+          <div>
+            <h1 className="text-xl md:text-2xl" style={{ fontFamily:'Sora,sans-serif', fontWeight:800, color:'var(--text-base)' }}>{t('paymentHistory')}</h1>
+            <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
+          </div>
+          <div className="text-sm md:text-base" style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:700, color:'#34d399' }}>
+            {t('total')}: ₹{totalAmt.toLocaleString('en-IN')}
+          </div>
         </div>
-        <div style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:700, fontSize:16, color:'#34d399' }}>
-          {t('total')}: ₹{totalAmt.toLocaleString('en-IN')}
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="fade-up stagger-1 mt-6 flex flex-wrap gap-3 sm:gap-4 items-end glass-panel p-4 rounded-2xl">
-        <div>
-          <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('from')}</label>
-          <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>setFrom(e.target.value)}/>
-        </div>
-        <div>
-          <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('to')}</label>
-          <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
-        </div>
-        <div>
-          <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>Payment Method</label>
-          <select className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer" value={method} onChange={e=>{setMethod(e.target.value); setPage(1)}}>
-            <option value="">All Methods</option>
-            <option value="Cash">Cash</option>
-            <option value="UPI">UPI</option>
-            <option value="Postdated Check">Postdated Check</option>
-          </select>
+        {/* Filters */}
+        <div className="fade-up stagger-1 mt-2 md:mt-4 flex flex-row gap-2 md:gap-3 items-end bg-[var(--surface2)] p-2 md:p-3 rounded-xl border border-[var(--border-color)]">
+          <div className="flex-1">
+            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">{t('from')}</label>
+            <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>setFrom(e.target.value)}/>
+          </div>
+          <div className="flex-1">
+            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">{t('to')}</label>
+            <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
+          </div>
+          <div className="flex-1">
+            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">Method</label>
+            <select className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer" value={method} onChange={e=>{setMethod(e.target.value); setPage(1)}}>
+              <option value="">All</option>
+              <option value="Cash">Cash</option>
+              <option value="UPI">UPI</option>
+              <option value="Postdated Check">Check</option>
+            </select>
+          </div>
         </div>
       </div>
 

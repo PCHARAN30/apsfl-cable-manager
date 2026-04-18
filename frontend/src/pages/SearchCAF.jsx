@@ -51,27 +51,30 @@ export default function SearchCAF() {
   }, [query])
 
   return (
-    <div className="page max-w-4xl mx-auto">
-      <div className="fade-up text-center mb-8 mt-4">
-        <h1 className="font-display font-extrabold text-3xl text-[var(--text-base)] mb-3 tracking-tight">Quick Search</h1>
-        <p className="text-[var(--text-muted)] text-sm">Enter a CAF number, phone number, or name to view customer details.</p>
-      </div>
-
-      <div className="fade-up stagger-1 relative mb-8">
-        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-          <svg className={`w-6 h-6 transition-colors ${query ? 'text-emerald-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
+    <div className="page max-w-4xl mx-auto !mt-0 !pt-0">
+      {/* Top Section (Sticky Container) */}
+      <div className="sticky top-0 z-40 bg-[var(--bg-base)] pb-4 -mt-4 pt-2 -mx-4 px-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8 border-b border-[var(--border-color)] mb-4 shadow-sm md:shadow-none">
+        <div className="fade-up text-center mb-4 mt-2">
+          <h1 className="font-display font-extrabold text-3xl text-[var(--text-base)] mb-2 tracking-tight">Quick Search</h1>
+          <p className="text-[var(--text-muted)] text-xs md:text-sm">Enter a CAF number, phone number, or name to view customer details.</p>
         </div>
-        <input 
-          ref={inputRef}
-          autoFocus
-          type="text" 
-          className="w-full bg-[var(--surface2)] border-2 border-[var(--border-color)] text-[var(--text-base)] text-lg rounded-2xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 outline-none transition-all py-4 pr-6 pl-14 shadow-2xl placeholder-slate-500" 
-          placeholder="Search CAF e.g., 100123..."
-          value={query} 
-          onChange={e => setQuery(e.target.value)} 
-        />
+
+        <div className="fade-up stagger-1 relative max-w-2xl mx-auto">
+          <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+            <svg className={`w-6 h-6 transition-colors ${query ? 'text-emerald-400' : 'text-slate-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <input 
+            ref={inputRef}
+            autoFocus
+            type="text" 
+            className="w-full bg-[var(--surface2)] border-2 border-[var(--border-color)] text-[var(--text-base)] text-base md:text-lg rounded-xl md:rounded-2xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500/50 outline-none transition-all py-3 pr-6 pl-12 md:py-4 md:pl-14 shadow-md md:shadow-2xl placeholder-slate-500" 
+            placeholder="Search CAF e.g., 100123..."
+            value={query} 
+            onChange={e => setQuery(e.target.value)} 
+          />
+        </div>
       </div>
 
       <div className="fade-up stagger-2 grid grid-cols-1 md:grid-cols-2 gap-4">

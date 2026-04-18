@@ -116,92 +116,95 @@ export default function Customers() {
 
   return (
     <div className="page !mt-0 !pt-0">
-      {/* WhatsApp-style Sticky Mobile Header (Search + Tabs) */}
-      <div className="md:hidden sticky top-14 z-30 -mx-4 mb-4 !mt-0 !pt-0 flex flex-col shadow-md">
-        {/* Search Bar */}
-        <div className="bg-[#075E54] dark:bg-slate-800 px-4 py-2 transition-colors">
-          <div className="relative w-full">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input className="w-full bg-black/10 dark:bg-black/20 border border-transparent text-white placeholder-emerald-100/70 text-sm rounded-xl focus:bg-black/20 focus:border-emerald-400/30 outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search by name, CAF, phone..."
-            value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
+      {/* Top Section (Sticky Container) */}
+      <div className="sticky top-0 z-40 bg-[var(--bg-base)] pb-0 -mt-3 pt-0 -mx-3 px-3 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8">
+        {/* WhatsApp-style Sticky Mobile Header (Search + Tabs) */}
+        <div className="md:hidden -mx-3 mb-2 flex flex-col shadow-md bg-[#075E54] dark:bg-slate-800 transition-colors">
+          {/* Search Bar */}
+          <div className="px-3 py-1.5">
+            <div className="relative w-full">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input className="w-full bg-black/15 dark:bg-black/20 border border-transparent text-white placeholder-emerald-100/70 text-[13px] rounded-md focus:bg-black/25 focus:border-emerald-400/30 outline-none transition-all py-1.5 pr-3 pl-9 shadow-inner" placeholder="Search by name, CAF, phone..."
+              value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
+            </div>
+          </div>
+          {/* Tabs */}
+          <div className="flex text-emerald-50">
+            {TABS.map(s => (
+              <button 
+                key={s} 
+                onClick={()=>{setStatus(s); setPage(1)}}
+                className={`flex-1 py-1.5 text-[10px] font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-white text-white' : 'border-transparent text-emerald-100/70 hover:text-white'}`}
+              >
+                {s}
+              </button>
+            ))}
           </div>
         </div>
-        {/* Tabs */}
-        <div className="bg-[#075E54] dark:bg-slate-800 flex text-emerald-50 transition-colors">
+
+        {/* Header */}
+        <div className="hidden md:flex fade-up flex-wrap items-center justify-between gap-3 md:pt-4">
+          <div>
+            <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('customers')}</h1>
+            <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
+          </div>
+          <button onClick={() => setAddModal(true)} className="hidden md:flex btn-primary">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            {t('addCustomer')}
+          </button>
+        </div>
+
+        {/* Filters */}
+        <div className="fade-up stagger-1 flex flex-col md:flex-row gap-4 mt-0 md:mt-6">
+          <div style={{ position:'relative', flex:1 }} className="hidden md:block w-full">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search by name, CAF, phone..."
+            value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
+          </div>
+          
+          {/* PON Filter Dropdown */}
+          <div className="relative w-max md:w-auto">
+            <select
+              value={ponFilter}
+              onChange={(e) => { setPonFilter(e.target.value); setPage(1); }}
+              className="appearance-none h-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-full md:rounded-xl pl-9 md:pl-4 pr-9 md:pr-10 py-2 md:py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-bold md:font-medium shadow-sm md:shadow-inner transition-all"
+            >
+              <option value="">All PONs</option>
+              {availablePons.map(pon => (
+                <option key={pon} value={pon}>{pon} ({ponStats.get(pon) || 0}/128)</option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 left-3 md:hidden flex items-center pointer-events-none text-emerald-500">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+            </div>
+            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Tabs */}
+        <div className="hidden md:flex fade-up stagger-1 w-full border-b border-[var(--border-color)] mt-4">
           {TABS.map(s => (
             <button 
               key={s} 
               onClick={()=>{setStatus(s); setPage(1)}}
-              className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-4 ${statusFilter === s ? 'border-white text-white' : 'border-transparent text-emerald-100/70 hover:text-white'}`}
+              className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
             >
               {s}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Header */}
-      <div className="hidden md:flex fade-up flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('customers')}</h1>
-          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
-        </div>
-        <button onClick={() => setAddModal(true)} className="hidden md:flex btn-primary">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          {t('addCustomer')}
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="fade-up stagger-1 flex flex-col md:flex-row gap-4 mt-2 md:mt-6">
-        <div style={{ position:'relative', flex:1 }} className="hidden md:block w-full">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search by name, CAF, phone..."
-          value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
-        </div>
-        
-        {/* PON Filter Dropdown */}
-        <div className="relative w-max md:w-auto">
-          <select
-            value={ponFilter}
-            onChange={(e) => { setPonFilter(e.target.value); setPage(1); }}
-            className="appearance-none h-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-full md:rounded-xl pl-9 md:pl-4 pr-9 md:pr-10 py-2 md:py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-bold md:font-medium shadow-sm md:shadow-inner transition-all"
-          >
-            <option value="">All PONs</option>
-            {availablePons.map(pon => (
-              <option key={pon} value={pon}>{pon} ({ponStats.get(pon) || 0}/128)</option>
-            ))}
-          </select>
-          <div className="absolute inset-y-0 left-3 md:hidden flex items-center pointer-events-none text-emerald-500">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-          </div>
-          <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Tabs */}
-      <div className="hidden md:flex fade-up stagger-1 w-full border-b border-[var(--border-color)] mt-4">
-        {TABS.map(s => (
-          <button 
-            key={s} 
-            onClick={()=>{setStatus(s); setPage(1)}}
-            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
-          >
-            {s}
-          </button>
-        ))}
       </div>
 
       {/* Bulk Actions Bar */}
@@ -324,7 +327,7 @@ export default function Customers() {
           const isExpired = (c.status === 'UNPAID' && c.validTill !== null) || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
           
           return (
-            <div key={c._id} className={`relative p-4 rounded-xl border shadow-sm border-l-4 ${isExpired ? 'border-l-red-500 bg-red-500/10 border-red-500/20' : expiring ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20' : 'border-l-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)]'}`}>
+            <div key={c._id} className={`relative p-3 rounded-xl border shadow-sm border-l-4 ${isExpired ? 'border-l-red-500 bg-red-500/10 border-red-500/20' : expiring ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20' : 'border-l-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)]'}`}>
               {/* Top: Name & Checkbox */}
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-start gap-3">
@@ -403,9 +406,9 @@ export default function Customers() {
       {/* Floating Action Button (Mobile) */}
       <button
         onClick={() => setAddModal(true)}
-        className="md:hidden fixed bottom-20 right-5 z-40 w-14 h-14 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
+        className="md:hidden fixed bottom-[72px] right-4 z-40 w-12 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
       >
-        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
       </button>

@@ -96,25 +96,25 @@ export default function Layout({ onLock, children }) {
   ]
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 relative overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex flex-col md:flex-row h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 relative overflow-hidden font-sans transition-colors duration-300">
 
       {/* WhatsApp Style Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#075E54] dark:bg-slate-800 z-50 flex items-center justify-between px-4 shadow-md transition-colors">
+      <header className="md:hidden shrink-0 h-10 bg-[#075E54] dark:bg-slate-800 z-50 flex items-center justify-between px-3 transition-colors">
         <div className="flex items-center">
-          <h2 className="font-display font-bold text-lg text-white">{companyName}</h2>
+          <h2 className="font-display font-bold text-[15px] text-white">{companyName}</h2>
           {isOffline && <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-sm">OFFLINE</span>}
         </div>
-        <div className="flex items-center gap-4 text-white">
+        <div className="flex items-center gap-3 text-white">
         {isInstallable && (
           <button onClick={handleInstallClick} className="hover:text-emerald-200 transition-colors flex items-center justify-center" title="Install App">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           </button>
         )}
           <button onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="hover:text-emerald-200 transition-colors flex items-center justify-center">
-            {theme==='dark' ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>}
+            {theme==='dark' ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>}
           </button>
           <button onClick={() => setProfileModal(true)} className="hover:text-emerald-200 transition-colors flex items-center justify-center">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
           </button>
         </div>
       </header>
@@ -127,7 +127,7 @@ export default function Layout({ onLock, children }) {
       </div>
 
       {/* Desktop Sidebar Navigation */}
-      <aside className="hidden md:flex flex-col inset-y-0 left-0 z-50 w-72 bg-slate-800 text-slate-200 transition-transform duration-300 ease-out relative shadow-none">
+      <aside className="hidden md:flex shrink-0 flex-col w-72 bg-slate-800 text-slate-200 transition-transform duration-300 ease-out shadow-none">
         <div className="p-6 hidden md:flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
             <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
@@ -175,14 +175,14 @@ export default function Layout({ onLock, children }) {
       </aside>
 
       {/* Main Page Content */}
-      <main className="flex-1 h-full overflow-y-auto pt-14 pb-24 px-4 md:pt-8 md:pb-10 md:px-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
+      <main className="flex-1 overflow-y-auto p-3 md:p-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
         <div className="max-w-7xl mx-auto w-full">
           {children}
         </div>
       </main>
 
       {/* Mobile Bottom Navigation Tab Bar (WhatsApp / Material 3 Style) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex justify-around items-center px-1 pb-2 pt-2 shadow-[0_-8px_15px_rgba(0,0,0,0.03)]">
+      <nav className="md:hidden shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex justify-around items-center px-1 pb-1 pt-1.5 shadow-[0_-8px_15px_rgba(0,0,0,0.03)]">
         {navItems.map(item => {
           const isActive = pathname === item.path;
           return (

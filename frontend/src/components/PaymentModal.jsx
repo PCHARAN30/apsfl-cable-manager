@@ -116,49 +116,49 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
         </div>
 
         {/* Scrollable Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
+        <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
           
-        {/* Billing Summary */}
-        <div className="mb-5 p-4 rounded-xl bg-[var(--surface2)] border border-[var(--border-color)]">
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6, fontSize:13 }}>
+        {/* Small Area Billing Summary Layout */}
+        <div className="mb-4 p-3 rounded-xl bg-[var(--surface2)] border border-[var(--border-color)]">
+          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4, fontSize:12 }}>
             <span style={{ color:'var(--text-muted)' }}>{customer.planName || 'Package'}:</span>
             <span style={{ fontWeight:600, color:'var(--text-base)', fontFamily:'JetBrains Mono,monospace' }}>₹{customer.planAmount || 291}</span>
           </div>
           {customer.carryOver > 0 && (
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6, fontSize:13 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4, fontSize:12 }}>
               <span style={{ color:'var(--text-muted)' }}>Pending Debt:</span>
               <span style={{ fontWeight:600, color:'#f59e0b', fontFamily:'JetBrains Mono,monospace' }}>₹{customer.carryOver}</span>
             </div>
           )}
           {customer.validTill && new Date(customer.validTill) < new Date() && (
-             <div style={{ display:'flex', justifyContent:'space-between', fontSize:13 }}>
+             <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
                 <span style={{ color:'var(--text-muted)' }}>Account Status:</span>
                 <span style={{ fontWeight:600, color:'#ef4444' }}>EXPIRED</span>
              </div>
           )}
           {customer.status !== 'UNPAID' && (
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginTop: 4, paddingTop: 4, borderTop: '1px solid var(--border-color)' }}>
               <span style={{ color:'var(--text-muted)' }}>Next Billing:</span>
               <span style={{ fontWeight:600, color:'var(--text-base)', fontFamily:'JetBrains Mono,monospace' }}>{getNextCycle()}</span>
             </div>
           )}
         </div>
 
-        {/* Amount */}
-        <div style={{ marginBottom:16 }}>
-          <span style={S.label}>{t('amountPaid')} (₹)</span>
-          <input type="number" className="input" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:24, padding:'14px 16px', fontWeight:700 }}
-            value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0" min="1"/>
-        </div>
-
-        {/* Payment Method */}
-        <div style={{ marginBottom:20 }}>
-          <span style={S.label}>{t('paymentMethod') || 'Payment Method'}</span>
-          <select className="input" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} style={{ appearance: 'auto', cursor: 'pointer' }}>
-            <option value="Cash">Cash</option>
-            <option value="UPI">UPI</option>
-            <option value="Postdated Check">Postdated Check</option>
-          </select>
+        {/* Amount & Method Inline */}
+        <div className="flex gap-3 mb-2">
+          <div className="flex-1">
+            <span style={S.label}>{t('amountPaid')} (₹)</span>
+            <input type="number" className="input w-full" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:18, padding:'10px 12px', fontWeight:700 }}
+              value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0" min="1"/>
+          </div>
+          <div className="flex-1">
+            <span style={S.label}>{t('paymentMethod') || 'Method'}</span>
+            <select className="input w-full h-[46px]" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} style={{ padding:'0 12px', appearance: 'auto', cursor: 'pointer' }}>
+              <option value="Cash">Cash</option>
+              <option value="UPI">UPI</option>
+              <option value="Postdated Check">Check</option>
+            </select>
+          </div>
         </div>
         </div>
 
