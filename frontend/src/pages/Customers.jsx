@@ -9,6 +9,33 @@ import EditCustomerModal from '../components/EditCustomerModal'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'
 
+// Custom hook for debouncing search inputs
+function useDebounce(value, delay = 300) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+// Helper component to highlight search terms in text
+const HighlightMatch = ({ text, highlight }) => {
+  if (!highlight || !text) return <>{text}</>;
+  const parts = String(text).split(new RegExp(`(${highlight})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) => 
+        part.toLowerCase() === String(highlight).toLowerCase() ? (
+          <span key={i} className="bg-emerald-400/40 text-inherit rounded-sm px-0.5">{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+};
+
 const StatusBadge = ({ status }) => {
   const cls = { PAID:'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20', UNPAID:'bg-red-500/10 text-red-500 border border-red-500/20', PARTIAL:'bg-amber-500/10 text-amber-500 border border-amber-500/20' }
   const dot = { PAID:'#22C55E', UNPAID:'#EF4444', PARTIAL:'#F59E0B' }
@@ -26,6 +53,8 @@ export default function Customers() {
   const [total, setTotal]         = useState(0)
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
+  const debouncedSearch           = useDebounce(search, 300)
+  const [showSearch, setShowSearch] = useState(false)
   const [statusFilter, setStatus] = useState('ALL')
   const [ponFilter, setPonFilter] = useState('')
   const [availablePons, setAvailablePons] = useState([])
@@ -59,7 +88,7 @@ export default function Customers() {
     setLoading(true)
     try {
       const params = { limit, page }
-      if (search) params.search = search
+      if (debouncedSearch) params.search = debouncedSearch
       if (statusFilter !== 'ALL') params.status = statusFilter
       if (ponFilter) params.pon = ponFilter
       const res = await getCustomers(params)
@@ -68,9 +97,9 @@ export default function Customers() {
       setSelectedIds([]) // Clear selection on page/filter change
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }
-  }, [search, statusFilter, ponFilter, page])
+  }, [debouncedSearch, statusFilter, ponFilter, page])
 
-  useEffect(() => { const t = setTimeout(load, 300); return ()=>clearTimeout(t) }, [load])
+  useEffect(() => { load() }, [load])
 
   const handleMarkUnpaid = async (c) => {
     try { await markUnpaid(c._id); toast.success('Marked UNPAID'); load() }
@@ -117,26 +146,32 @@ export default function Customers() {
   return (
     <div className="page !mt-0 !pt-0">
       {/* Top Section (Sticky Container) */}
-      <div className="sticky top-0 z-40 bg-[var(--bg-base)] pb-0 -mt-3 pt-0 -mx-3 px-3 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8">
-        {/* WhatsApp-style Sticky Mobile Header (Search + Tabs) */}
-        <div className="md:hidden -mx-3 mb-2 flex flex-col shadow-md bg-[#075E54] dark:bg-slate-800 transition-colors">
-          {/* Search Bar */}
-          <div className="px-3 py-1.5">
-            <div className="relative w-full">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-emerald-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input className="w-full bg-black/15 dark:bg-black/20 border border-transparent text-white placeholder-emerald-100/70 text-[13px] rounded-md focus:bg-black/25 focus:border-emerald-400/30 outline-none transition-all py-1.5 pr-3 pl-9 shadow-inner" placeholder="Search by name, CAF, phone..."
-              value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
+      <div className="bg-[var(--bg-base)] pb-0 -mt-3 pt-0 -mx-3 px-3 md:sticky md:top-0 md:z-40 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8">
+        {/* Mobile Search & Chips Block */}
+        <div className="md:hidden -mx-3 mb-2 flex flex-col bg-[#075E54] dark:bg-slate-800 shadow-sm transition-colors">
+          
+          {/* Inline Expandable Search */}
+          {showSearch && (
+            <div className="px-3 pt-3 pb-1 flex items-center gap-2 fade-in">
+              <div className="relative flex-1">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input autoFocus className="w-full bg-black/15 dark:bg-black/20 border border-transparent text-white placeholder-emerald-100/70 text-[13px] rounded-md focus:bg-black/25 focus:border-emerald-400/30 outline-none transition-all py-2 pr-3 pl-9 shadow-inner" placeholder="Search by name, CAF, phone..." value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
+              </div>
+              <button onClick={() => {setShowSearch(false); setSearch('');}} className="text-emerald-50 p-1 hover:text-white">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
-          </div>
-          {/* Tabs */}
-          <div className="flex text-emerald-50">
+          )}
+          
+          {/* Mobile Chips */}
+          <div className="px-3 py-2 flex gap-2 overflow-x-auto custom-scrollbar">
             {TABS.map(s => (
               <button 
                 key={s} 
                 onClick={()=>{setStatus(s); setPage(1)}}
-                className={`flex-1 py-1.5 text-[10px] font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-white text-white' : 'border-transparent text-emerald-100/70 hover:text-white'}`}
+                className={`px-4 py-1.5 rounded-full text-[11px] font-bold text-center transition-all duration-200 whitespace-nowrap ${statusFilter === s ? 'bg-emerald-500 text-white shadow-md scale-105' : 'bg-black/20 text-emerald-100/70 hover:bg-black/30 hover:text-white'}`}
               >
                 {s}
               </button>
@@ -193,13 +228,13 @@ export default function Customers() {
           </div>
         </div>
 
-        {/* Desktop Tabs */}
-        <div className="hidden md:flex fade-up stagger-1 w-full border-b border-[var(--border-color)] mt-4">
+        {/* Desktop Chips */}
+        <div className="hidden md:flex fade-up stagger-1 w-full mt-4 gap-2">
           {TABS.map(s => (
             <button 
               key={s} 
               onClick={()=>{setStatus(s); setPage(1)}}
-              className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
+              className={`px-5 py-2 rounded-full text-sm font-bold text-center transition-all duration-200 ${statusFilter === s ? 'bg-emerald-500 text-white shadow-md scale-105' : 'bg-[var(--surface2)] text-[var(--text-muted)] border border-[var(--border-color)] hover:bg-[var(--border-color)] hover:text-[var(--text-base)]'}`}
             >
               {s}
             </button>
@@ -270,11 +305,15 @@ export default function Customers() {
                     </td>
                     <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + idx + 1}</td>
                     <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>
-                      {c.name}
+                      <HighlightMatch text={c.name} highlight={debouncedSearch} />
                       {expiring && <span style={{ marginLeft:6, fontSize:11, color:'#fbbf24', fontFamily:'JetBrains Mono,monospace' }}>⚠{days}d</span>}
                     </td>
-                    <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{c.cafNumber}</td>
-                    <td className="tbl-cell">{c.phone||'NA'}</td>
+                    <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>
+                      <HighlightMatch text={c.cafNumber} highlight={debouncedSearch} />
+                    </td>
+                    <td className="tbl-cell">
+                      {c.phone ? <HighlightMatch text={c.phone} highlight={debouncedSearch} /> : 'NA'}
+                    </td>
                     <td className="tbl-cell" style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.address||'NA'}</td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', color:'var(--text-base)' }}>₹{c.planAmount||291}</td>
                     <td className="tbl-cell"><StatusBadge status={c.status}/></td>
@@ -338,8 +377,13 @@ export default function Customers() {
                     onChange={() => toggleSelect(c._id)}
                   />
                   <div>
-                    <h3 className="font-bold text-[var(--text-base)] text-base leading-tight">{c.name}</h3>
-                    <p className="text-xs text-slate-500 font-mono mt-1">{c.cafNumber} {c.phone && `| 📞 ${c.phone}`}</p>
+                    <h3 className="font-bold text-[var(--text-base)] text-base leading-tight">
+                      <HighlightMatch text={c.name} highlight={debouncedSearch} />
+                    </h3>
+                    <p className="text-xs text-slate-500 font-mono mt-1">
+                      <HighlightMatch text={c.cafNumber} highlight={debouncedSearch} />
+                      {c.phone && <> <span className="mx-1">|</span> 📞 <HighlightMatch text={c.phone} highlight={debouncedSearch} /></>}
+                    </p>
                   </div>
                 </div>
                 <StatusBadge status={c.status} />
@@ -402,6 +446,16 @@ export default function Customers() {
           </div>
         </div>
       )}
+
+      {/* Floating Search Button (Mobile) */}
+      <button
+        onClick={() => setShowSearch(true)}
+        className="md:hidden fixed bottom-[130px] right-4 z-40 w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 rounded-full shadow-lg shadow-black/10 flex items-center justify-center active:scale-90 transition-all"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
 
       {/* Floating Action Button (Mobile) */}
       <button
