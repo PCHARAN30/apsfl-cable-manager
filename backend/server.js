@@ -8,9 +8,7 @@ const startCronJobs = require("./jobs/cronJob");
 const customerRoutes = require("./routes/customerRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
-const authRoutes = require("./routes/authRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
-const { protect } = require("./middleware/authMiddleware");
 
 const app = express();
 
@@ -37,11 +35,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ─── API Routes ───────────────────────────────────────────────────────────────
-app.use("/api/auth", authRoutes);
-app.use("/api/customers", protect, customerRoutes);
-app.use("/api/payments", protect, paymentRoutes);
-app.use("/api/dashboard", protect, dashboardRoutes);
-app.use("/api/settings", protect, settingsRoutes);
+app.use("/api/customers", customerRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/settings", settingsRoutes);
 
 // ─── Root Route (Browser Friendly) ────────────────────────────────────────────
 app.get("/", (req, res) => {

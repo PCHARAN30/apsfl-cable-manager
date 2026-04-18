@@ -20,8 +20,8 @@ export default defineConfig({
         name: 'APSFL Cable Manager',
         short_name: 'APSFL',
         description: 'Manage customers, track payments, and monitor collections.',
-        theme_color: '#0f1929', // Matches your slate-950 background
-        background_color: '#0f1929',
+        theme_color: '#2563eb', // Solid blue
+        background_color: '#f8fafc',
         display: 'standalone',
         icons: [
           {

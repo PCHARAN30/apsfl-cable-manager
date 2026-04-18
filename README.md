@@ -159,4 +159,5 @@ Duplicate CAF numbers are **automatically skipped**.
 PORT=5000
 MONGO_URI=mongodb+srv://...
 NODE_ENV=development
+OPERATOR_SIGNUP_CODE=YOUR_SECRET_CODE_HERE # A secret code required for new operator signups
 ```

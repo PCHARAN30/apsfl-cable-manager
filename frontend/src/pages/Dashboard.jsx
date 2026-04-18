@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getDashboardStats, getExpiringCustomers, getMonthlyChart, resetDashboard } from '../services/api'
+import { getDashboardStats, getExpiringCustomers, resetDashboard } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import PonDashboard from '../components/PonDashboard'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : '—'
@@ -13,18 +12,16 @@ export default function Dashboard() {
   const { t } = useLang()
   const [stats, setStats]       = useState(null)
   const [expiring, setExpiring] = useState([])
-  const [chart, setChart]       = useState([])
   const [loading, setLoading]   = useState(true)
   const [resetting, setResetting] = useState(false)
 
   const load = async () => {
     try {
-      const [s, e, c] = await Promise.all([
-        getDashboardStats(), getExpiringCustomers(7), getMonthlyChart(),
+      const [s, e] = await Promise.all([
+        getDashboardStats(), getExpiringCustomers(7)
       ])
       setStats(s.data.data)
       setExpiring(e.data.data)
-      setChart(c.data.data.map(d => ({ date: d._id.slice(5), income: d.income, count: d.count })))
     } catch (error) { 
       console.error("Failed to load dashboard data:", error)
     }
@@ -89,15 +86,15 @@ export default function Dashboard() {
       {/* Top stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
         {topCards.map((c, i) => (
-          <div key={i} className={`p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-${i+1}`} title={c.tooltip}>
+        <div key={i} className={`p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md fade-up stagger-${i+1}`} title={c.tooltip}>
             <div className="flex items-start justify-between mb-3">
-              <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)' }}>{c.label}</p>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background:`${c.color}18` }}>
+            <p style={{ fontSize:13, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)' }}>{c.label}</p>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:`${c.color}18` }}>
                 <c.icon color={c.color} />
               </div>
             </div>
-            <p className="count-up" style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:22, color:c.color }}>{c.value}</p>
-            <p style={{ fontSize:11, color:'var(--text-muted)', marginTop:4 }}>{c.sub}</p>
+          <p className="count-up" style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:32, color:c.color, marginTop:8 }}>{c.value}</p>
+          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:6, fontWeight:500 }}>{c.sub}</p>
           </div>
         ))}
       </div>
@@ -105,47 +102,18 @@ export default function Dashboard() {
       {/* Bottom stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-4">
         {bottomCards.map((c, i) => (
-          <div key={i} className={`p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-${i+5}`}>
-            <p style={{ fontSize:11, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:8 }}>{c.label}</p>
-            <p style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:28, color:c.color }}>{c.value}</p>
-            <p style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>{c.sub}</p>
+        <div key={i} className={`p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md fade-up stagger-${i+5}`}>
+          <p style={{ fontSize:13, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:12 }}>{c.label}</p>
+          <p style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:36, color:c.color }}>{c.value}</p>
+          <p style={{ fontSize:14, color:'var(--text-muted)', marginTop:4, fontWeight:500 }}>{c.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Chart + expiring */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-        {/* Income chart */}
-        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm lg:col-span-2 fade-up stagger-5">
-          <p style={{ fontWeight:600, color:'var(--text-base)', marginBottom:16, fontSize:15 }}>{t('incomeThisMonth')}</p>
-          {chart.length === 0 ? (
-            <div style={{ height:180, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--text-muted)', fontSize:14 }}>
-              {t('noPayments')}
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={chart} margin={{ top:4, right:4, left:0, bottom:0 }}>
-                <defs>
-                  <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#22C55E" stopOpacity={0.35}/>
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color, #e2e8f0)"/>
-                <XAxis dataKey="date" tick={{ fill:'var(--text-muted, #64748B)', fontSize:11 }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fill:'var(--text-muted, #64748B)', fontSize:11 }} axisLine={false} tickLine={false}
-                  tickFormatter={v=>`₹${v>=1000?(v/1000).toFixed(0)+'k':v}`}/>
-                <Tooltip contentStyle={{ background:'var(--bg-surface)', border:'1px solid var(--border-color)', borderRadius:12, fontSize:12, color:'var(--text-base)' }}
-                  labelStyle={{ color:'var(--text-muted)' }} formatter={v=>[`₹${v.toLocaleString('en-IN')}`,'Income']}/>
-                <Area type="monotone" dataKey="income" stroke="#22C55E" strokeWidth={2.5}
-                  fill="url(#g)" dot={false} activeDot={{ r:5, fill:'#22C55E', stroke:'white', strokeWidth:2 }}/>
-              </AreaChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-
+      {/* Expiring soon & Progress */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         {/* Expiring soon */}
-        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-6">
+        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-5">
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16 }}>
             <span className="pulse-dot" />
             <p style={{ fontWeight:600, color:'var(--text-base)', fontSize:14 }}>{t('expiringIn7Days')}</p>
@@ -172,11 +140,10 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Progress bar */}
       {total > 0 && (
-        <div className="p-6 mt-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-7">
+        <div className="p-6 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-sm fade-up stagger-6 flex flex-col justify-center">
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, color:'var(--text-muted)', marginBottom:10 }}>
             <span>{t('collectionProgress')}</span>
             <span style={{ fontWeight:600, color:'#22C55E' }}>{paidPct}% {t('collected')}</span>
@@ -199,6 +166,7 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+    </div>
 
       {/* PON Dashboard */}
       <div className="mt-4 fade-up stagger-8">

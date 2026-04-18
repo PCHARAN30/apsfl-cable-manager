@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { getCurrentUser } from './services/api'
-import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Payments from './pages/Payments'
 import Import from './pages/Import'
 import Layout from './components/Layout'
 import SearchCAF from './pages/SearchCAF'
+import PinLockScreen from './pages/PinLockScreen'
 import Settings from './pages/Settings'
 
 const Placeholder = ({ title }) => (
@@ -23,51 +22,88 @@ const Placeholder = ({ title }) => (
 )
 
 export default function App() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [hasPin, setHasPin] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(true)
 
-  // Check for an existing session on initial load
   useEffect(() => {
-    const verifySession = async () => {
-      const storedUserId = localStorage.getItem('apsfl_userId')
-      if (!storedUserId) {
-        setLoading(false)
-        return // Skip unnecessary API call if completely logged out
-      }
-      
-      try {
-        const res = await getCurrentUser()
-        // Our backend returns { success: true, data: { username, role } }
-        setUser(res.data.data) 
-      } catch (err) {
-        // If it fails (e.g., 401 Not Authenticated), we keep user as null
-        setUser(null)
-      } finally {
-        setLoading(false)
-      }
+    const storedPin = localStorage.getItem('app_pin_hash')
+    if (storedPin) {
+      setHasPin(true)
+      setShowWelcome(false) // Skip welcome, go straight to lock screen
     }
 
-    verifySession()
+    const AUTO_LOCK_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+    const checkAutoLock = () => {
+      const lastActive = localStorage.getItem('app_last_active');
+      if (lastActive && Date.now() - parseInt(lastActive, 10) > AUTO_LOCK_MS) {
+        setIsUnlocked(false);
+        setShowWelcome(true);
+      }
+    };
+
+    checkAutoLock();
+    if (!localStorage.getItem('app_last_active')) {
+      localStorage.setItem('app_last_active', Date.now().toString());
+    }
+
+    let throttleTimer;
+    const updateActivity = () => {
+      if (throttleTimer) return;
+      throttleTimer = setTimeout(() => {
+        localStorage.setItem('app_last_active', Date.now().toString());
+        throttleTimer = null;
+      }, 5000);
+    };
+
+    const events = ['mousemove', 'keydown', 'touchstart', 'click'];
+    events.forEach(e => window.addEventListener(e, updateActivity));
+
+    const intervalId = setInterval(checkAutoLock, 60000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) checkAutoLock();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, updateActivity));
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(intervalId);
+      clearTimeout(throttleTimer);
+    };
   }, [])
 
-  // 1. Show a loading state while checking the cookie
-  if (loading) {
+  // 1. If PIN is set but app is locked
+  if (hasPin && !isUnlocked) {
+    return <PinLockScreen onUnlock={() => setIsUnlocked(true)} />
+  }
+
+  // 2. If NO PIN is set, and user hasn't clicked "Tap to Enter"
+  if (!hasPin && showWelcome) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', color: 'var(--text-muted)' }}>
-        Loading session...
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
+        <div className="text-center max-w-sm w-full fade-up">
+          <div className="w-24 h-24 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/30">
+            <svg viewBox="0 0 24 24" fill="none" className="w-12 h-12 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          </div>
+          <h1 className="text-4xl font-extrabold mb-8">CableSync</h1>
+          <button onClick={() => { setShowWelcome(false); setIsUnlocked(true); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95">
+            Tap to Enter
+          </button>
+        </div>
       </div>
     )
   }
 
-  // 2. If no user is found, restrict them to the Login page
-  if (!user) {
-    return <Login onLogin={(userData) => setUser(userData)} />
-  }
-
-  // 3. If a user exists, render the main authenticated application
+  // 3. Main Application
   return (
     <div className="app-container">
-      <Layout user={user} onLogout={() => setUser(null)}>
+      <Layout onLock={() => {
+        if (hasPin) setIsUnlocked(false)
+        else setShowWelcome(true)
+      }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/customers" element={<Customers />} />

@@ -21,10 +21,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && error.config && !error.config.url.includes('/auth/')) {
-      localStorage.removeItem('apsfl_userId')
-      window.location.href = '/' // Kicks user back to login instantly
-    }
     return Promise.reject(error)
   }
 )

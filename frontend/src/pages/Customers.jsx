@@ -122,7 +122,7 @@ export default function Customers() {
           <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('customers')}</h1>
           <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
         </div>
-        <button onClick={() => setAddModal(true)} className="btn-primary">
+        <button onClick={() => setAddModal(true)} className="hidden md:flex btn-primary">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
@@ -158,16 +158,19 @@ export default function Customers() {
             </svg>
           </div>
         </div>
+      </div>
 
-        <div className="flex overflow-x-auto gap-2 p-1.5 bg-[var(--surface2)] border border-[var(--border-color)] rounded-xl backdrop-blur-md">
-          {TABS.map(s => (
-          <button key={s} onClick={()=>{setStatus(s); setPage(1)}}
-              className={`px-4 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-all duration-200 ${statusFilter===s ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/20' : 'text-[var(--text-muted)] hover:bg-[var(--border-color)] border border-transparent'}`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+      {/* WhatsApp-style Status Tabs */}
+      <div className="fade-up stagger-1 flex w-full border-b border-[var(--border-color)] mt-4">
+        {TABS.map(s => (
+          <button 
+            key={s} 
+            onClick={()=>{setStatus(s); setPage(1)}}
+            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       {/* Bulk Actions Bar */}
@@ -365,6 +368,16 @@ export default function Customers() {
           </div>
         </div>
       )}
+
+      {/* Floating Action Button (Mobile) */}
+      <button
+        onClick={() => setAddModal(true)}
+        className="md:hidden fixed bottom-20 right-5 z-40 w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-500/40 flex items-center justify-center active:scale-90 transition-all"
+      >
+        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
       {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}
