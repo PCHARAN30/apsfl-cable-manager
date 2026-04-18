@@ -138,6 +138,7 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
           <select className="input" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} style={{ appearance: 'auto', cursor: 'pointer' }}>
             <option value="Cash">Cash</option>
             <option value="UPI">UPI</option>
+            <option value="Postdated Check">Postdated Check</option>
           </select>
         </div>
         </div>

@@ -74,6 +74,7 @@ export default function Payments() {
             <option value="">All Methods</option>
             <option value="Cash">Cash</option>
             <option value="UPI">UPI</option>
+            <option value="Postdated Check">Postdated Check</option>
           </select>
         </div>
       </div>
