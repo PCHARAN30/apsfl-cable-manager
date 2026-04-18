@@ -83,14 +83,21 @@ export default function App() {
   // 2. If NO PIN is set, and user hasn't clicked "Tap to Enter"
   if (!hasPin && showWelcome) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
-        <div className="text-center max-w-sm w-full fade-up">
-          <div className="w-24 h-24 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/30">
-            <svg viewBox="0 0 24 24" fill="none" className="w-12 h-12 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)] text-[var(--text-base)] p-4">
+        <div className="text-center max-w-sm w-full fade-up bg-[var(--bg-surface)] p-8 rounded-3xl border border-[var(--border-color)] shadow-2xl">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
           </div>
-          <h1 className="text-4xl font-extrabold mb-8">CableSync</h1>
-          <button onClick={() => { setShowWelcome(false); setIsUnlocked(true); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95">
-            Tap to Enter
+          <h1 className="text-3xl font-extrabold mb-2 text-[var(--text-base)]">CableSync</h1>
+          <p className="text-[var(--text-muted)] text-sm mb-8 font-medium">Operator Workspace</p>
+          
+          <div className="mb-8 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 text-blue-700 dark:text-blue-300 text-sm">
+            Welcome! Tap below to enter. You can set up a secure password inside your settings.
+          </div>
+
+          <button onClick={() => { setShowWelcome(false); setIsUnlocked(true); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+            Enter Workspace
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>
         </div>
       </div>

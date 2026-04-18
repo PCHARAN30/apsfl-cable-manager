@@ -13,13 +13,19 @@ export default function Login({ onLogin }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white p-4">
-      <div className="text-center max-w-sm w-full fade-up">
-        <div className="w-24 h-24 mx-auto mb-8 rounded-3xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/30">
-          <svg viewBox="0 0 24 24" fill="none" className="w-12 h-12 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)] text-[var(--text-base)] p-4">
+      <div className="text-center max-w-sm w-full fade-up bg-[var(--bg-surface)] p-8 rounded-3xl border border-[var(--border-color)] shadow-2xl">
+        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
         </div>
-        <h1 className="text-4xl font-extrabold mb-8">CableSync</h1>
-        <div className="w-full py-4 bg-blue-600/40 text-white rounded-2xl font-bold text-xl animate-pulse">
+        <h1 className="text-3xl font-extrabold mb-2 text-[var(--text-base)]">CableSync</h1>
+        <p className="text-[var(--text-muted)] text-sm mb-8 font-medium">Operator Workspace</p>
+
+        <div className="w-full py-4 bg-[var(--surface2)] text-blue-600 dark:text-blue-400 rounded-xl font-bold text-lg flex justify-center items-center gap-3 border border-[var(--border-color)]">
+          <svg className="animate-spin w-5 h-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
           Entering...
         </div>
       </div>

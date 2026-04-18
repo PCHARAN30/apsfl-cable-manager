@@ -56,24 +56,24 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
-        <div className="relative w-full max-w-sm p-6 rounded-3xl bg-white text-slate-800 shadow-2xl scale-in overflow-hidden">
+        <div className="relative w-full max-w-sm p-6 rounded-3xl bg-[var(--bg-surface)] text-[var(--text-base)] border border-[var(--border-color)] shadow-2xl scale-in overflow-hidden">
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             </div>
             <h2 className="text-2xl font-bold mb-1">Payment Successful</h2>
-            <p className="text-slate-500 text-sm mb-6">{receipt.date}</p>
+            <p className="text-[var(--text-muted)] text-sm mb-6">{receipt.date}</p>
             
-            <div className="bg-slate-50 rounded-2xl p-5 text-left space-y-3 mb-8 border border-slate-100">
-                <div className="flex justify-between"><span className="text-slate-500">Customer</span><span className="font-bold">{receipt.customerName}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">CAF</span><span className="font-mono font-bold">{receipt.cafNumber}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Amount</span><span className="font-bold text-green-600">₹{receipt.amount}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Valid Till</span><span className="font-bold">{receipt.validTill}</span></div>
+            <div className="bg-[var(--surface2)] rounded-2xl p-5 text-left space-y-3 mb-8 border border-[var(--border-color)]">
+                <div className="flex justify-between"><span className="text-[var(--text-muted)]">Customer</span><span className="font-bold text-[var(--text-base)]">{receipt.customerName}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-muted)]">CAF</span><span className="font-mono font-bold text-[var(--text-base)]">{receipt.cafNumber}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-muted)]">Amount</span><span className="font-bold text-emerald-500">₹{receipt.amount}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-muted)]">Valid Till</span><span className="font-bold text-[var(--text-base)]">{receipt.validTill}</span></div>
             </div>
           </div>
           
           <div className="flex flex-col gap-3">
-            <button onClick={onClose} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors">Close</button>
+            <button onClick={onClose} className="btn-secondary w-full py-3.5 rounded-xl text-base">Close</button>
           </div>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
           
         {/* Billing Summary */}
-        <div className="mb-5 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+        <div className="mb-5 p-4 rounded-xl bg-[var(--surface2)] border border-[var(--border-color)]">
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6, fontSize:13 }}>
             <span style={{ color:'var(--text-muted)' }}>{customer.planName || 'Package'}:</span>
             <span style={{ fontWeight:600, color:'var(--text-base)', fontFamily:'JetBrains Mono,monospace' }}>₹{customer.planAmount || 291}</span>
