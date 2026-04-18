@@ -116,17 +116,30 @@ export default function Customers() {
 
   return (
     <div className="page !mt-0 !pt-0">
-      {/* WhatsApp-style Status Tabs (Sticky on Mobile) */}
-      <div className="md:hidden sticky top-14 -mx-4 !mt-0 !pt-0 z-30 bg-[#075E54] dark:bg-slate-800 flex shadow-md text-emerald-50 transition-colors mb-4">
-        {TABS.map(s => (
-          <button 
-            key={s} 
-            onClick={()=>{setStatus(s); setPage(1)}}
-            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-4 ${statusFilter === s ? 'border-white text-white' : 'border-transparent text-emerald-100/70 hover:text-white'}`}
-          >
-            {s}
-          </button>
-        ))}
+      {/* WhatsApp-style Sticky Mobile Header (Search + Tabs) */}
+      <div className="md:hidden sticky top-14 z-30 -mx-4 mb-4 !mt-0 !pt-0 flex flex-col shadow-md">
+        {/* Search Bar */}
+        <div className="bg-[#075E54] dark:bg-slate-800 px-4 py-2 transition-colors">
+          <div className="relative w-full">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input className="w-full bg-black/10 dark:bg-black/20 border border-transparent text-white placeholder-emerald-100/70 text-sm rounded-xl focus:bg-black/20 focus:border-emerald-400/30 outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search by name, CAF, phone..."
+            value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
+          </div>
+        </div>
+        {/* Tabs */}
+        <div className="bg-[#075E54] dark:bg-slate-800 flex text-emerald-50 transition-colors">
+          {TABS.map(s => (
+            <button 
+              key={s} 
+              onClick={()=>{setStatus(s); setPage(1)}}
+              className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-4 ${statusFilter === s ? 'border-white text-white' : 'border-transparent text-emerald-100/70 hover:text-white'}`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Header */}
@@ -143,31 +156,18 @@ export default function Customers() {
         </button>
       </div>
 
-      {/* Desktop Tabs */}
-      <div className="hidden md:flex fade-up stagger-1 w-full border-b border-[var(--border-color)] mt-4">
-        {TABS.map(s => (
-          <button 
-            key={s} 
-            onClick={()=>{setStatus(s); setPage(1)}}
-            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
       {/* Filters */}
       <div className="fade-up stagger-1 flex flex-col md:flex-row gap-4 mt-2 md:mt-6">
-        <div style={{ position:'relative', flex:1 }} className="w-full">
+        <div style={{ position:'relative', flex:1 }} className="hidden md:block w-full">
           <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search in current tab..."
+          <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search by name, CAF, phone..."
           value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
         </div>
         
         {/* PON Filter Dropdown */}
-        <div className="relative">
+        <div className="relative w-full md:w-auto">
           <select
             value={ponFilter}
             onChange={(e) => { setPonFilter(e.target.value); setPage(1); }}
@@ -184,6 +184,19 @@ export default function Customers() {
             </svg>
           </div>
         </div>
+      </div>
+
+      {/* Desktop Tabs */}
+      <div className="hidden md:flex fade-up stagger-1 w-full border-b border-[var(--border-color)] mt-4">
+        {TABS.map(s => (
+          <button 
+            key={s} 
+            onClick={()=>{setStatus(s); setPage(1)}}
+            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
+          >
+            {s}
+          </button>
+        ))}
       </div>
 
       {/* Bulk Actions Bar */}
