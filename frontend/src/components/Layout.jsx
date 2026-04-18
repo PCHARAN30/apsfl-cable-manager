@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useLang } from '../context/LanguageContext'
-import { getSettings } from '../services/api'
+import { getSettings, markPayment } from '../services/api'
 import toast from 'react-hot-toast'
 import ProfileModal from './ProfileModal'
 
@@ -18,6 +18,9 @@ export default function Layout({ onLock, children }) {
   const [profileModal, setProfileModal] = useState(false)
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light')
   const [companyName, setCompanyName] = useState('CableSync')
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [isInstallable, setIsInstallable] = useState(false)
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
 
   useEffect(() => {
     getSettings().then(res => {
@@ -30,6 +33,59 @@ export default function Layout({ onLock, children }) {
     else document.documentElement.classList.remove('dark')
     localStorage.setItem('theme', theme)
   }, [theme])
+
+  // ⚡ OFFLINE SYNC LISTENER
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOffline(false);
+      let queue = JSON.parse(localStorage.getItem('offline_payments') || '[]');
+      if (queue.length > 0) {
+        toast.loading(`Syncing ${queue.length} offline payment(s)...`, { id: 'sync' });
+        let remaining = [];
+        let successCount = 0;
+        
+        for (const item of queue) {
+          try {
+            await markPayment(item.customerId, item.payload);
+            successCount++;
+          } catch (err) {
+            remaining.push(item); // Keep failed ones in queue
+          }
+        }
+        
+        if (remaining.length > 0) {
+          localStorage.setItem('offline_payments', JSON.stringify(remaining));
+          toast.error(`Synced ${successCount}, but ${remaining.length} failed.`, { id: 'sync' });
+        } else {
+          localStorage.removeItem('offline_payments');
+          toast.success(`Successfully synced ${successCount} payment(s)!`, { id: 'sync' });
+        }
+      }
+    };
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setIsInstallable(false);
+    setDeferredPrompt(null);
+  };
 
   const navItems = [
     { path: '/', label: t('dashboard'), icon: IcoDash },
@@ -46,8 +102,14 @@ export default function Layout({ onLock, children }) {
       <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#075E54] dark:bg-slate-800 z-50 flex items-center justify-between px-4 shadow-md transition-colors">
         <div className="flex items-center">
           <h2 className="font-display font-bold text-lg text-white">{companyName}</h2>
+          {isOffline && <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-sm">OFFLINE</span>}
         </div>
         <div className="flex items-center gap-4 text-white">
+        {isInstallable && (
+          <button onClick={handleInstallClick} className="hover:text-emerald-200 transition-colors flex items-center justify-center" title="Install App">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          </button>
+        )}
           <button onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="hover:text-emerald-200 transition-colors flex items-center justify-center">
             {theme==='dark' ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>}
           </button>
@@ -71,7 +133,10 @@ export default function Layout({ onLock, children }) {
             <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
           </div>
           <div>
-            <h2 className="font-display font-extrabold text-xl text-white tracking-tight leading-none">{companyName}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-display font-extrabold text-xl text-white tracking-tight leading-none">{companyName}</h2>
+              {isOffline && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">OFFLINE</span>}
+            </div>
             <p className="text-xs text-yellow-400 font-medium tracking-wide mt-1">Manager</p>
           </div>
         </div>
@@ -90,6 +155,12 @@ export default function Layout({ onLock, children }) {
         </nav>
 
         <div className="p-4 border-t border-white/10 bg-black/20 flex flex-col gap-2">
+      {isInstallable && (
+        <button onClick={handleInstallClick} className="w-full py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-xl font-bold text-sm transition-all duration-200 flex justify-center items-center gap-2 border border-blue-500/10">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Install App
+        </button>
+      )}
           <button onClick={() => setProfileModal(true)} className="w-full py-2.5 bg-[var(--surface2)] hover:bg-white/10 text-white rounded-xl font-bold text-sm transition-all duration-200 flex justify-center items-center gap-2 border border-white/10">
             <svg className="w-4 h-4 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

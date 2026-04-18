@@ -167,17 +167,22 @@ export default function Customers() {
         </div>
         
         {/* PON Filter Dropdown */}
-        <div className="relative w-full md:w-auto">
+        <div className="relative w-max md:w-auto">
           <select
             value={ponFilter}
             onChange={(e) => { setPonFilter(e.target.value); setPage(1); }}
-            className="appearance-none h-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-4 py-2.5 pr-10 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-medium shadow-inner"
+            className="appearance-none h-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-full md:rounded-xl pl-9 md:pl-4 pr-9 md:pr-10 py-2 md:py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-bold md:font-medium shadow-sm md:shadow-inner transition-all"
           >
             <option value="">All PONs</option>
             {availablePons.map(pon => (
               <option key={pon} value={pon}>{pon} ({ponStats.get(pon) || 0}/128)</option>
             ))}
           </select>
+          <div className="absolute inset-y-0 left-3 md:hidden flex items-center pointer-events-none text-emerald-500">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+          </div>
           <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />

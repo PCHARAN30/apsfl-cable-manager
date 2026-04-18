@@ -83,8 +83,9 @@ export default function App() {
   // 2. If NO PIN is set, and user hasn't clicked "Tap to Enter"
   if (!hasPin && showWelcome) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)] text-[var(--text-base)] p-4">
-        <div className="text-center max-w-sm w-full fade-up bg-[var(--bg-surface)] p-8 rounded-3xl border border-[var(--border-color)] shadow-2xl">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)] text-[var(--text-base)] p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/icon-512.png')] bg-cover bg-center opacity-10 blur-sm scale-105 pointer-events-none"></div>
+        <div className="relative z-10 text-center max-w-sm w-full fade-up bg-[var(--bg-surface)] p-8 rounded-3xl border border-[var(--border-color)] shadow-2xl">
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
             <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
           </div>

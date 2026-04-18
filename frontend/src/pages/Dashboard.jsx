@@ -20,7 +20,25 @@ export default function Dashboard() {
       const [s, e] = await Promise.all([
         getDashboardStats(), getExpiringCustomers(7)
       ])
-      setStats(s.data.data)
+      
+      let baseStats = s.data.data;
+      
+      // Optimistic offline adjustments
+      const queue = JSON.parse(localStorage.getItem('offline_payments') || '[]');
+      if (queue.length > 0) {
+        let offlineRevenue = 0;
+        queue.forEach(item => {
+          offlineRevenue += Number(item.payload.amountPaid || 0);
+        });
+        baseStats = {
+          ...baseStats,
+          dailyIncome: (baseStats.dailyIncome || 0) + offlineRevenue,
+          monthlyIncome: (baseStats.monthlyIncome || 0) + offlineRevenue,
+          totalToReceive: Math.max(0, (baseStats.totalToReceive || 0) - offlineRevenue)
+        };
+      }
+      
+      setStats(baseStats)
       setExpiring(e.data.data)
     } catch (error) { 
       console.error("Failed to load dashboard data:", error)

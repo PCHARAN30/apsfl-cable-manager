@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useLang } from '../context/LanguageContext'
-import { getSettings, updateSettings } from '../services/api'
+import { getSettings, updateSettings, markPayment } from '../services/api'
 
 export default function Settings() {
   const { t } = useLang()
   const [loading, setLoading] = useState(false)
   const [companyName, setCompanyName] = useState('CableSync')
   const [plans, setPlans] = useState([])
+  const [offlineQueue, setOfflineQueue] = useState([])
 
   useEffect(() => {
     const load = async () => {
@@ -24,6 +25,9 @@ export default function Settings() {
       }
     };
     load();
+    
+    // Load offline queue
+    setOfflineQueue(JSON.parse(localStorage.getItem('offline_payments') || '[]'));
   }, [])
 
   const handleSave = async () => {
@@ -55,6 +59,32 @@ export default function Settings() {
   const removePlan = (id) => setPlans(plans.filter(p => p.id !== id))
   const setAsDefault = (id) => setPlans(plans.map(p => ({ ...p, isDefault: p.id === id })))
 
+  const handleManualSync = async () => {
+    if (offlineQueue.length === 0) return;
+    toast.loading(`Syncing ${offlineQueue.length} offline payment(s)...`, { id: 'sync' });
+    let remaining = [];
+    let successCount = 0;
+    
+    for (const item of offlineQueue) {
+      try {
+        await markPayment(item.customerId, item.payload);
+        successCount++;
+      } catch (err) {
+        remaining.push(item);
+      }
+    }
+    
+    if (remaining.length > 0) {
+      localStorage.setItem('offline_payments', JSON.stringify(remaining));
+      setOfflineQueue(remaining);
+      toast.error(`Synced ${successCount}, but ${remaining.length} failed.`, { id: 'sync' });
+    } else {
+      localStorage.removeItem('offline_payments');
+      setOfflineQueue([]);
+      toast.success(`Successfully synced ${successCount} payment(s)!`, { id: 'sync' });
+    }
+  }
+
   return (
     <div className="page max-w-3xl mx-auto">
       <div className="fade-up flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -68,6 +98,21 @@ export default function Settings() {
       </div>
 
       <div className="space-y-6 fade-up stagger-1">
+        {/* Offline Sync Card */}
+        {offlineQueue.length > 0 && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-bold text-amber-600 dark:text-amber-500">Offline Payments Pending</h2>
+              <span className="bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">{offlineQueue.length} Queue</span>
+            </div>
+            <p className="text-sm text-amber-600/80 dark:text-amber-500/80 mb-4">You have payments saved locally that haven't been uploaded to the server yet.</p>
+            <button onClick={handleManualSync} className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              Sync Now
+            </button>
+          </div>
+        )}
+
         {/* General Settings Card */}
         <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[var(--text-base)] mb-4">{t('generalSettings')}</h2>

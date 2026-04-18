@@ -23,8 +23,9 @@ export default function PinLockScreen({ onUnlock }) {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center p-4 text-[var(--text-base)]">
-      <form onSubmit={handleSubmit} className={`w-full max-w-sm bg-[var(--bg-surface)] p-8 border border-[var(--border-color)] rounded-3xl shadow-2xl text-center transition-transform duration-300 ${error ? 'animate-shake border-red-500/50' : ''}`}>
+    <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center p-4 text-[var(--text-base)] relative overflow-hidden">
+      <div className="absolute inset-0 bg-[url('/icon-512.png')] bg-cover bg-center opacity-10 blur-sm scale-105 pointer-events-none"></div>
+      <form onSubmit={handleSubmit} className={`relative z-10 w-full max-w-sm bg-[var(--bg-surface)] p-8 border border-[var(--border-color)] rounded-3xl shadow-2xl text-center transition-transform duration-300 ${error ? 'animate-shake border-red-500/50' : ''}`}>
         <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30">
           <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />

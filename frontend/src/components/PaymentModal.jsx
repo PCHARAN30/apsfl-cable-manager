@@ -14,6 +14,25 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
   const handleSubmit = async () => {
     if (!amount || Number(amount) <= 0) { playErrorSound(); toast.error('Enter a valid amount'); return }
     setLoading(true)
+
+    // ⚡ OFFLINE QUEUE LOGIC
+    if (!navigator.onLine) {
+      const offlinePayment = { customerId: customer._id, payload: { amountPaid: Number(amount), paymentMethod } };
+      const queue = JSON.parse(localStorage.getItem('offline_payments') || '[]');
+      queue.push(offlinePayment);
+      localStorage.setItem('offline_payments', JSON.stringify(queue));
+      
+      playSuccessSound()
+      toast.success('📱 Saved offline. Will sync when online!')
+      setReceipt({
+        customerName: customer.name, cafNumber: customer.cafNumber, amount: amount, paymentMethod,
+        date: new Date().toLocaleString('en-IN') + ' (OFFLINE PENDING)', validTill: 'Pending Sync',
+      })
+      if (onSuccess) onSuccess();
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await markPayment(customer._id, { amountPaid:Number(amount), paymentMethod })
       playSuccessSound()
