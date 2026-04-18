@@ -74,8 +74,6 @@ export default function Payments() {
             <option value="">All Methods</option>
             <option value="Cash">Cash</option>
             <option value="UPI">UPI</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="Card">Card</option>
           </select>
         </div>
       </div>
