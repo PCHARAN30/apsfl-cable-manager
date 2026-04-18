@@ -13,6 +13,7 @@ export default function Payments() {
   const [loading, setLoading]   = useState(true)
   const [from, setFrom]         = useState('')
   const [to, setTo]             = useState('')
+  const [method, setMethod]     = useState('')
   const [page, setPage]         = useState(1)
   const limit = 50
 
@@ -22,6 +23,7 @@ export default function Payments() {
       const params = { limit, page }
       if (from) params.from = from
       if (to)   params.to   = to
+      if (method) params.method = method
       const res = await getAllPayments(params)
       setPayments(res.data.data)
       setTotal(res.data.total)
@@ -33,7 +35,7 @@ export default function Payments() {
   useEffect(() => {
     const t = setTimeout(load, 300)
     return () => clearTimeout(t)
-  }, [page, from, to])
+  }, [page, from, to, method])
 
   const handleDelete = async (p) => {
     if (!window.confirm(`Delete entire payment of ₹${p.amountPaid} for ${p.customerName}?\n\nThis will reverse their validity by ${p.planMonths} month(s).`)) return
@@ -57,7 +59,7 @@ export default function Payments() {
       </div>
 
       {/* Filters */}
-      <div className="fade-up stagger-1 mt-6 flex flex-wrap gap-4 items-end glass-panel p-4 rounded-2xl">
+      <div className="fade-up stagger-1 mt-6 flex flex-wrap gap-3 sm:gap-4 items-end glass-panel p-4 rounded-2xl">
         <div>
           <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('from')}</label>
           <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>setFrom(e.target.value)}/>
@@ -65,6 +67,16 @@ export default function Payments() {
         <div>
           <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>{t('to')}</label>
           <input type="date" className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{ fontSize:11, color:'var(--text-muted)', display:'block', marginBottom:5 }}>Payment Method</label>
+          <select className="w-full sm:w-auto bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer" value={method} onChange={e=>{setMethod(e.target.value); setPage(1)}}>
+            <option value="">All Methods</option>
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Card">Card</option>
+          </select>
         </div>
       </div>
 

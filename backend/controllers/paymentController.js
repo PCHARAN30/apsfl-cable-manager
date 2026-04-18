@@ -230,7 +230,7 @@ exports.getPaymentHistory = async (req, res) => {
 /** GET /api/payments/all — all payments with optional date range */
 exports.getAllPayments = async (req, res) => {
   try {
-    const { from, to, page = 1, limit = 50 } = req.query;
+    const { from, to, method, page = 1, limit = 50 } = req.query;
     const query = {};
 
     if (from || to) {
@@ -241,6 +241,10 @@ exports.getAllPayments = async (req, res) => {
         toDate.setHours(23, 59, 59, 999);
         query.paymentDate.$lte = toDate;
       }
+    }
+
+    if (method) {
+      query.notes = { $regex: new RegExp(`via ${method}`, 'i') };
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
