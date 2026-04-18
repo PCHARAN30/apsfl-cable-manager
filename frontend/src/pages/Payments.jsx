@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getAllPayments, deletePayment } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
+import PaymentHistoryModal from '../components/PaymentHistoryModal'
 
 const fmtDate = d => new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'})
 
@@ -14,6 +15,7 @@ export default function Payments() {
   const [from, setFrom]         = useState('')
   const [to, setTo]             = useState('')
   const [method, setMethod]     = useState('')
+  const [historyModal, setHistoryModal] = useState(null)
   const [page, setPage]         = useState(1)
   const limit = 50
 
@@ -118,13 +120,20 @@ export default function Payments() {
                   <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{fmtDate(p.paymentDate)}</td>
                   <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{p.notes||'NA'}</td>
                   <td className="tbl-cell">
-                    <button onClick={()=>handleDelete(p)}
-                      style={{ padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'none', color:'var(--text-muted)', transition:'color 0.15s' }}
-                      onMouseEnter={e=>e.target.style.color='#f87171'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'} title="Delete Payment">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
-                      </svg>
-                    </button>
+                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                      <button onClick={()=>setHistoryModal({ _id: p.customer, name: p.customerName, cafNumber: p.cafNumber })}
+                        className="px-2 py-1 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        View
+                      </button>
+                      <button onClick={()=>handleDelete(p)}
+                        style={{ padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'none', color:'var(--text-muted)', transition:'color 0.15s' }}
+                        onMouseEnter={e=>e.target.style.color='#f87171'} onMouseLeave={e=>e.target.style.color='var(--text-muted)'} title="Delete Payment">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -176,7 +185,10 @@ export default function Payments() {
                 )}
               </div>
 
-              <div className="pt-4 border-t border-[var(--border-color)] flex justify-end">
+              <div className="pt-4 border-t border-[var(--border-color)] flex justify-end gap-2">
+                <button onClick={()=>setHistoryModal({ _id: p.customer, name: p.customerName, cafNumber: p.cafNumber })} className="flex items-center gap-2 p-2.5 rounded-lg text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs font-bold">
+                  View History
+                </button>
                 <button onClick={()=>handleDelete(p)} className="flex items-center gap-2 p-2.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors text-xs font-bold">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
@@ -201,6 +213,11 @@ export default function Payments() {
           </div>
         </div>
       )}
+      <PaymentHistoryModal 
+        isOpen={!!historyModal} 
+        onClose={() => setHistoryModal(null)} 
+        customer={historyModal} 
+      />
     </div>
   )
 }

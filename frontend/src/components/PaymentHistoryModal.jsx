@@ -1,24 +1,29 @@
 import { useState, useEffect } from 'react'
-import { getPaymentHistory, deletePayment } from '../services/api'
+import { getPaymentHistory, deletePayment, getCustomerById } from '../services/api'
 import { useLang } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 
-export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
+export default function PaymentHistoryModal({ isOpen, onClose, customer: initialCustomer }) {
   const { t } = useLang()
   const [loading, setLoading] = useState(true)
   const [payments, setPayments] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [fullCustomer, setFullCustomer] = useState(null)
 
   useEffect(() => {
-    if (isOpen && customer?._id) {
+    if (isOpen && initialCustomer?._id) {
       fetchHistory()
-    } else if (!isOpen) { setSearchQuery('') } // Reset search on close
-  }, [isOpen, customer])
+      getCustomerById(initialCustomer._id).then(res => setFullCustomer(res.data.data)).catch(()=>{})
+    } else if (!isOpen) { 
+      setSearchQuery('');
+      setFullCustomer(null);
+    }
+  }, [isOpen, initialCustomer])
 
   const fetchHistory = async () => {
     setLoading(true)
     try {
-      const res = await getPaymentHistory(customer._id)
+      const res = await getPaymentHistory(initialCustomer._id)
       setPayments(res.data.data || [])
     } catch (error) {
       console.error(error)
@@ -42,7 +47,8 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer }) {
     }
   }
 
-  if (!isOpen || !customer) return null
+  if (!isOpen || !initialCustomer) return null
+  const customer = fullCustomer || initialCustomer;
 
   // Filter logic for the global search bar
   const isSearching = searchQuery.trim().length > 0;

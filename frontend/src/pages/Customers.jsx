@@ -4,7 +4,7 @@ import { getCustomers, markUnpaid, deleteCustomer, bulkDeleteCustomers, getPonSt
 import { useLang } from '../context/LanguageContext'
 import PaymentModal from '../components/PaymentModal'
 import AddCustomerModal from '../components/AddCustomerModal'
-import PaymentHistoryModal from '../components/PaymentHistoryModal'
+import ViewCustomerModal from '../components/ViewCustomerModal'
 import EditCustomerModal from '../components/EditCustomerModal'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'
@@ -33,7 +33,7 @@ export default function Customers() {
   const [payModal, setPayModal]   = useState(null)
   const [addModal, setAddModal]   = useState(false)
   const [editModal, setEditModal] = useState(null)
-  const [historyModal, setHistoryModal] = useState(null)
+  const [viewModal, setViewModal] = useState(null)
   const [deleting, setDeleting]   = useState(null)
   const [page, setPage]           = useState(1)
   const limit = 50
@@ -115,9 +115,22 @@ export default function Customers() {
   const TABS = ['ALL','PAID','UNPAID','PARTIAL']
 
   return (
-    <div className="page">
+    <div className="page !mt-0 !pt-0">
+      {/* WhatsApp-style Status Tabs (Sticky on Mobile) */}
+      <div className="md:hidden sticky top-14 -mx-4 !mt-0 !pt-0 z-30 bg-[#075E54] dark:bg-slate-800 flex shadow-md text-emerald-50 transition-colors mb-4">
+        {TABS.map(s => (
+          <button 
+            key={s} 
+            onClick={()=>{setStatus(s); setPage(1)}}
+            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-4 ${statusFilter === s ? 'border-white text-white' : 'border-transparent text-emerald-100/70 hover:text-white'}`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
       {/* Header */}
-      <div className="fade-up flex flex-wrap items-center justify-between gap-3">
+      <div className="hidden md:flex fade-up flex-wrap items-center justify-between gap-3">
         <div>
           <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('customers')}</h1>
           <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
@@ -130,13 +143,26 @@ export default function Customers() {
         </button>
       </div>
 
+      {/* Desktop Tabs */}
+      <div className="hidden md:flex fade-up stagger-1 w-full border-b border-[var(--border-color)] mt-4">
+        {TABS.map(s => (
+          <button 
+            key={s} 
+            onClick={()=>{setStatus(s); setPage(1)}}
+            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
       {/* Filters */}
-      <div className="fade-up stagger-1 flex flex-col md:flex-row gap-4 mt-6">
+      <div className="fade-up stagger-1 flex flex-col md:flex-row gap-4 mt-2 md:mt-6">
         <div style={{ position:'relative', flex:1 }} className="w-full">
           <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder={t('searchPlaceholder')}
+          <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search in current tab..."
           value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
         </div>
         
@@ -158,19 +184,6 @@ export default function Customers() {
             </svg>
           </div>
         </div>
-      </div>
-
-      {/* WhatsApp-style Status Tabs */}
-      <div className="fade-up stagger-1 flex w-full border-b border-[var(--border-color)] mt-4">
-        {TABS.map(s => (
-          <button 
-            key={s} 
-            onClick={()=>{setStatus(s); setPage(1)}}
-            className={`flex-1 py-3 text-sm font-bold text-center transition-all duration-200 border-b-2 ${statusFilter === s ? 'border-emerald-500 text-emerald-500' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-base)]'}`}
-          >
-            {s}
-          </button>
-        ))}
       </div>
 
       {/* Bulk Actions Bar */}
@@ -259,10 +272,10 @@ export default function Customers() {
                         <button onClick={()=>setEditModal(c)} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 bg-slate-200 hover:bg-slate-300 transition-colors">
                           {t('edit')}
                         </button>
-                        <button onClick={()=>setHistoryModal(c)}
+                        <button onClick={()=>setViewModal(c)}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 transition-colors"
                         >
-                          View
+                          Details
                         </button>
                         <button onClick={()=>handleDelete(c)} disabled={deleting===c._id}
                           style={{ padding:'5px 8px', borderRadius:8, cursor:'pointer', background:'transparent', border:'none', color:'var(--text-muted)', transition:'color 0.15s' }}
@@ -341,8 +354,8 @@ export default function Customers() {
                   <button onClick={()=>setEditModal(c)} className="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
                     {t('edit')}
                   </button>
-                  <button onClick={()=>setHistoryModal(c)} className="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    View
+                  <button onClick={()=>setViewModal(c)} className="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    Details
                   </button>
                   <button onClick={()=>handleDelete(c)} disabled={deleting===c._id} className="p-2.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -372,7 +385,7 @@ export default function Customers() {
       {/* Floating Action Button (Mobile) */}
       <button
         onClick={() => setAddModal(true)}
-        className="md:hidden fixed bottom-20 right-5 z-40 w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-500/40 flex items-center justify-center active:scale-90 transition-all"
+        className="md:hidden fixed bottom-20 right-5 z-40 w-14 h-14 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
       >
         <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -382,11 +395,7 @@ export default function Customers() {
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
       {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}
       {editModal && <EditCustomerModal customer={editModal} onClose={()=>setEditModal(null)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}
-      <PaymentHistoryModal 
-        isOpen={!!historyModal} 
-        onClose={() => setHistoryModal(null)} 
-        customer={historyModal} 
-      />
+      {viewModal && <ViewCustomerModal customer={viewModal} onClose={() => setViewModal(null)} />}
     </div>
   )
 }

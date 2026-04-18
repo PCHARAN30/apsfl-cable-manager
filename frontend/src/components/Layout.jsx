@@ -42,34 +42,34 @@ export default function Layout({ onLock, children }) {
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 relative overflow-hidden font-sans transition-colors duration-300">
 
-      {/* Global Top-Right Controls */}
-      <div className="absolute top-3 right-4 md:top-6 md:right-8 z-40 flex items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-md">
-        <Link to="/search" className="text-slate-700 dark:text-slate-300 hover:text-blue-500 transition-colors flex items-center justify-center" title="Search Customers">
+      {/* WhatsApp Style Mobile Header */}
+      <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#075E54] dark:bg-slate-800 z-50 flex items-center justify-between px-4 shadow-md transition-colors">
+        <div className="flex items-center">
+          <h2 className="font-display font-bold text-lg text-white">{companyName}</h2>
+        </div>
+        <div className="flex items-center gap-4 text-white">
+          <Link to="/search" className="hover:text-emerald-200 transition-colors flex items-center justify-center" title="Search Customers">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </Link>
+          <button onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="hover:text-emerald-200 transition-colors flex items-center justify-center">
+            {theme==='dark' ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg> : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>}
+          </button>
+          <button onClick={() => setProfileModal(true)} className="hover:text-emerald-200 transition-colors flex items-center justify-center">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" /></svg>
+          </button>
+        </div>
+      </header>
+
+      {/* Desktop Top-Right Controls */}
+      <div className="hidden md:flex absolute top-6 right-8 z-40 items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl border-2 border-slate-300 dark:border-slate-600 shadow-md">
+        <Link to="/search" className="text-slate-700 dark:text-slate-300 hover:text-emerald-500 transition-colors flex items-center justify-center" title="Search Customers">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
         </Link>
         <div className="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
-        <button onClick={() => setProfileModal(true)} className="md:hidden text-slate-700 dark:text-slate-300 hover:text-emerald-500 transition-colors flex items-center justify-center">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-        </button>
-        <div className="md:hidden w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
         <button onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="text-slate-700 dark:text-slate-300 hover:text-orange-500 transition-colors flex items-center justify-center">
           {theme==='dark' ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>}
         </button>
-        <div className="md:hidden w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
-        <button onClick={onLock} className="md:hidden text-slate-700 dark:text-slate-300 hover:text-red-500 transition-colors flex items-center justify-center">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-        </button>
       </div>
-
-      {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-blue-600 z-30 flex items-center justify-between px-5 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white" stroke="currentColor" strokeWidth="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-          </div>
-          <h2 className="font-display font-bold text-lg text-white">{companyName}</h2>
-        </div>
-      </header>
 
       {/* Desktop Sidebar Navigation */}
       <aside className="hidden md:flex flex-col inset-y-0 left-0 z-50 w-72 bg-slate-800 text-slate-200 transition-transform duration-300 ease-out relative shadow-none">
@@ -111,7 +111,7 @@ export default function Layout({ onLock, children }) {
       </aside>
 
       {/* Main Page Content */}
-      <main className="flex-1 h-full overflow-y-auto pt-24 pb-24 px-4 md:pt-8 md:pb-10 md:px-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
+      <main className="flex-1 h-full overflow-y-auto pt-14 pb-24 px-4 md:pt-8 md:pb-10 md:px-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
         <div className="max-w-7xl mx-auto w-full">
           {children}
         </div>
