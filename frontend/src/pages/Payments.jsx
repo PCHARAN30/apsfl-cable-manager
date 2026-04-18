@@ -68,8 +68,8 @@ export default function Payments() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="fade-up stagger-2 mt-6 rounded-2xl glass-panel overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block fade-up stagger-2 mt-6 rounded-2xl glass-panel overflow-hidden">
         <div className="overflow-x-auto">
           <table className="tbl">
             <thead>
@@ -120,20 +120,76 @@ export default function Payments() {
             </tbody>
           </table>
         </div>
-        
-        {/* Pagination Controls */}
-        {total > limit && (
-          <div className="p-4 border-t border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
-            <span style={{ fontSize:13, color:'var(--text-muted)' }}>
-              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
-            </span>
-            <div className="flex gap-2">
-              <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
-              <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden fade-up stagger-2 flex flex-col gap-4 mt-6">
+        {loading ? (
+          [...Array(4)].map((_,i) => <div key={i} className="skeleton h-40 rounded-2xl w-full"/>)
+        ) : payments.length === 0 ? (
+          <div className="text-center py-12 text-slate-500 bg-[var(--surface2)] rounded-2xl border border-[var(--border-color)]">{t('noPaymentRecords')}</div>
+        ) : payments.map((p) => {
+          const isPartial = p.paymentType === 'PARTIAL';
+          return (
+            <div key={p._id} className={`relative p-4 rounded-xl border shadow-sm border-l-4 ${isPartial ? 'border-l-amber-500 bg-[var(--bg-surface)] border-[var(--border-color)]' : 'border-l-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)]'}`}>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-bold text-[var(--text-base)] text-base leading-tight">{p.customerName}</h3>
+                  <p className="text-xs text-slate-500 font-mono mt-1">{p.cafNumber}</p>
+                </div>
+                <span className={isPartial ? 'badge-partial' : 'badge-paid'}>{p.paymentType}</span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-y-3 mb-4 text-sm mt-4">
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Amount</p>
+                  <p className="font-mono font-bold text-emerald-500">₹{p.amountPaid.toLocaleString('en-IN')}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Months</p>
+                  <p className="font-mono font-medium text-[var(--text-base)]">{p.planMonths}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
+                  <p className="font-mono text-slate-600 dark:text-slate-300 text-xs">{fmtDate(p.paymentDate)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
+                  <p className="font-mono text-slate-600 dark:text-slate-300 text-xs">{p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'}</p>
+                </div>
+                {p.notes && (
+                  <div className="col-span-2">
+                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Notes</p>
+                    <p className="text-xs text-slate-500">{p.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-[var(--border-color)] flex justify-end">
+                <button onClick={()=>handleDelete(p)} className="flex items-center gap-2 p-2.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors text-xs font-bold">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+      
+      {/* Pagination Controls */}
+      {total > limit && (
+        <div className="mt-4 p-4 rounded-xl border border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
+          <span style={{ fontSize:13, color:'var(--text-muted)' }}>
+            Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
+          </span>
+          <div className="flex gap-2">
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
+            <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
