@@ -18,7 +18,12 @@ export default function ProfileModal({ onClose, onSuccess }) {
 
       if (appPassword) {
         localStorage.setItem('app_pin_hash', hashPin(appPassword.toLowerCase().trim()));
-        toast.success('App password enabled!');
+        
+        // Force auto-lock once to verify the new password
+        localStorage.removeItem('app_remember_me');
+        sessionStorage.removeItem('session_unlocked');
+        
+        toast.success('App password set! Please log in.');
       }
 
       onSuccess()

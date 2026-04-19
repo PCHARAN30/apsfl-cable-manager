@@ -211,10 +211,13 @@ exports.updateCustomer = async (req, res) => {
     }
 
     if (changedFields.length > 0) {
+      const settingsObj = await Settings.findOne();
+      const operatorName = settingsObj?.companyName || 'Operator';
+
       const now = new Date();
       const dateStr = now.toLocaleDateString("en-IN");
       const timeStr = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
-      const autoNote = `[System: ${changedFields.join(', ')} updated on ${dateStr} at ${timeStr}]`;
+      const autoNote = `[System: ${changedFields.join(', ')} updated on ${dateStr} at ${timeStr} (${operatorName})]`;
       
       // Safely append to frontend notes or existing db notes
       const baseNotes = updates.notes !== undefined ? String(updates.notes) : String(existingCustomer.notes || '');

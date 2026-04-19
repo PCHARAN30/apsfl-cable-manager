@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Payments from './pages/Payments'
@@ -21,24 +22,45 @@ const Placeholder = ({ title }) => (
   </div>
 )
 
+const checkInitialUnlock = () => {
+  const remembered = localStorage.getItem('app_remember_me') === 'true';
+  const sessionUnlocked = sessionStorage.getItem('session_unlocked') === 'true';
+  
+  // Offline > 6 hours check on mount (in case they close browser while offline and open it later)
+  const offlineSince = localStorage.getItem('app_offline_since');
+  if (offlineSince && navigator.onLine) {
+    const offlineDuration = Date.now() - parseInt(offlineSince, 10);
+    if (offlineDuration > 6 * 60 * 60 * 1000) {
+      localStorage.removeItem('app_remember_me');
+      sessionStorage.removeItem('session_unlocked');
+      localStorage.removeItem('app_offline_since');
+      return false;
+    }
+  }
+  return remembered || sessionUnlocked;
+}
+
 export default function App() {
-  const [isUnlocked, setIsUnlocked] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(checkInitialUnlock)
   const [hasPin, setHasPin] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(true)
+  const [showWelcome, setShowWelcome] = useState(!checkInitialUnlock())
 
   useEffect(() => {
     const storedPin = localStorage.getItem('app_pin_hash')
     if (storedPin) {
       setHasPin(true)
-      setShowWelcome(false) // Skip welcome, go straight to lock screen
+      setShowWelcome(false) 
     }
 
     const AUTO_LOCK_MS = 24 * 60 * 60 * 1000; // 24 hours
+    const OFFLINE_LOCK_MS = 6 * 60 * 60 * 1000; // 6 hours
 
     const checkAutoLock = () => {
       const lastActive = localStorage.getItem('app_last_active');
       if (lastActive && Date.now() - parseInt(lastActive, 10) > AUTO_LOCK_MS) {
         setIsUnlocked(false);
+        localStorage.removeItem('app_remember_me');
+        sessionStorage.removeItem('session_unlocked');
         setShowWelcome(true);
       }
     };
@@ -60,6 +82,33 @@ export default function App() {
     const events = ['mousemove', 'keydown', 'touchstart', 'click'];
     events.forEach(e => window.addEventListener(e, updateActivity));
 
+    const handleOffline = () => {
+      localStorage.setItem('app_offline_since', Date.now().toString());
+    };
+
+    const handleOnline = () => {
+      const offlineSince = localStorage.getItem('app_offline_since');
+      if (offlineSince) {
+        const offlineDuration = Date.now() - parseInt(offlineSince, 10);
+        if (offlineDuration > OFFLINE_LOCK_MS) {
+          setIsUnlocked(false);
+          localStorage.removeItem('app_remember_me');
+          sessionStorage.removeItem('session_unlocked');
+          toast.error('App locked due to extended offline period');
+        }
+        localStorage.removeItem('app_offline_since');
+      }
+    };
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+
+    if (!navigator.onLine && !localStorage.getItem('app_offline_since')) {
+      handleOffline();
+    } else if (navigator.onLine) {
+      handleOnline();
+    }
+
     const intervalId = setInterval(checkAutoLock, 60000);
 
     const handleVisibilityChange = () => {
@@ -69,15 +118,33 @@ export default function App() {
 
     return () => {
       events.forEach(e => window.removeEventListener(e, updateActivity));
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(intervalId);
       clearTimeout(throttleTimer);
     };
   }, [])
 
+  const handleUnlock = (remember) => {
+    setIsUnlocked(true);
+    sessionStorage.setItem('session_unlocked', 'true');
+    if (remember) {
+      localStorage.setItem('app_remember_me', 'true');
+    } else {
+      localStorage.removeItem('app_remember_me');
+    }
+    
+    if (!navigator.onLine) {
+      localStorage.setItem('app_offline_since', Date.now().toString());
+    } else {
+      localStorage.removeItem('app_offline_since');
+    }
+  };
+
   // 1. If PIN is set but app is locked
   if (hasPin && !isUnlocked) {
-    return <PinLockScreen onUnlock={() => setIsUnlocked(true)} />
+    return <PinLockScreen onUnlock={handleUnlock} />
   }
 
   // 2. If NO PIN is set, and user hasn't clicked "Tap to Enter"
@@ -96,7 +163,7 @@ export default function App() {
             Welcome! Tap below to enter. You can set up a secure password inside your settings.
           </div>
 
-          <button onClick={() => { setShowWelcome(false); setIsUnlocked(true); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+          <button onClick={() => { setShowWelcome(false); setIsUnlocked(true); localStorage.setItem('app_remember_me', 'true'); sessionStorage.setItem('session_unlocked', 'true'); }} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">
             Enter Workspace
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>
@@ -109,6 +176,8 @@ export default function App() {
   return (
     <div className="app-container">
       <Layout onLock={() => {
+        localStorage.removeItem('app_remember_me');
+        sessionStorage.removeItem('session_unlocked');
         if (hasPin) setIsUnlocked(false)
         else setShowWelcome(true)
       }}>

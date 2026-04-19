@@ -113,7 +113,7 @@ const en = {
     // Settings
     settings: 'Settings',
     generalSettings: 'General Settings',
-    companyName: 'Company Name',
+    userName: 'User Name',
     subscriptionPlans: 'Monthly Plans',
     planName: 'Plan Name',
     addPlan: 'Add Plan',

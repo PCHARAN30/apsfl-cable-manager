@@ -6,28 +6,40 @@ import { getSettings, updateSettings, markPayment } from '../services/api'
 export default function Settings() {
   const { t } = useLang()
   const [loading, setLoading] = useState(false)
-  const [companyName, setCompanyName] = useState('CableSync')
+  const [userName, setUserName] = useState('CableSync')
   const [plans, setPlans] = useState([])
   const [offlineQueue, setOfflineQueue] = useState([])
+  const [isInstallable, setIsInstallable] = useState(!!window.deferredPrompt)
 
   useEffect(() => {
     const load = async () => {
       try {
         const res = await getSettings();
         if (res.data?.data) {
-          setCompanyName(res.data.data.companyName || 'CableSync');
+          setUserName(res.data.data.companyName || 'CableSync');
           if (res.data.data.plans) setPlans(res.data.data.plans);
         }
       } catch (err) {
         // Fallback to local storage if backend settings aren't implemented yet
-        const localName = localStorage.getItem('cs_companyName');
-        if (localName) setCompanyName(localName);
+        const localName = localStorage.getItem('cs_userName');
+        if (localName) setUserName(localName);
       }
     };
     load();
     
     // Load offline queue
     setOfflineQueue(JSON.parse(localStorage.getItem('offline_payments') || '[]'));
+
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      setIsInstallable(true);
+    };
+    
+    if (window.deferredPrompt) setIsInstallable(true);
+    
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, [])
 
   const handleSave = async () => {
@@ -43,11 +55,11 @@ export default function Settings() {
         plansToSave[0].isDefault = true;
       }
       
-      await updateSettings({ companyName, plans: plansToSave });
+      await updateSettings({ companyName: userName, plans: plansToSave });
       toast.success('Settings saved successfully');
     } catch (err) {
       // Fallback to local storage to keep UI functional
-      localStorage.setItem('cs_companyName', companyName);
+      localStorage.setItem('cs_userName', userName);
       toast.success('Settings saved locally');
     } finally {
       setLoading(false);
@@ -85,6 +97,28 @@ export default function Settings() {
     }
   }
 
+  const handleInstall = async () => {
+    if (!window.deferredPrompt) return;
+    window.deferredPrompt.prompt();
+    const { outcome } = await window.deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsInstallable(false);
+      window.deferredPrompt = null;
+    }
+  }
+
+  const handleLogout = () => {
+    if (window.confirm('Are you sure you want to log out completely? This will remove your app password and session from this device.')) {
+      localStorage.removeItem('apsfl_userId');
+      localStorage.removeItem('app_pin_hash');
+      localStorage.removeItem('app_remember_me');
+      sessionStorage.removeItem('session_unlocked');
+      localStorage.removeItem('app_last_active');
+      localStorage.removeItem('app_offline_since');
+      window.location.reload();
+    }
+  }
+
   return (
     <div className="page max-w-3xl mx-auto">
       <div className="fade-up flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -113,12 +147,26 @@ export default function Settings() {
           </div>
         )}
 
+        {/* App Installation Card */}
+        {isInstallable && (
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-bold text-blue-600 dark:text-blue-400">Install CableSync App</h2>
+            </div>
+            <p className="text-sm text-blue-600/80 dark:text-blue-400/80 mb-4">Install this application on your home screen for quick access and a better full-screen experience.</p>
+            <button onClick={handleInstall} className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Install App Now
+            </button>
+          </div>
+        )}
+
         {/* General Settings Card */}
         <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[var(--text-base)] mb-4">{t('generalSettings')}</h2>
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400 block mb-2">{t('companyName')}</label>
-            <input type="text" className="input w-full md:w-1/2" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g., CableSync Network" />
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400 block mb-2">{t('userName')}</label>
+            <input type="text" className="input w-full md:w-1/2" value={userName} onChange={e => setUserName(e.target.value)} placeholder="e.g., Ramesh (Operator)" />
           </div>
         </div>
 
@@ -145,7 +193,41 @@ export default function Settings() {
             {plans.length === 0 && <div className="text-center py-6 text-slate-500 text-sm">No plans defined. Click "Add Plan" to create one.</div>}
           </div>
         </div>
+
+        {/* Danger Zone */}
+        <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-red-600 dark:text-red-500 mb-4">Danger Zone</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <p className="text-sm text-red-600/80 dark:text-red-500/80">Log out completely from this device. This will remove your app lock password.</p>
+            <button onClick={handleLogout} className="whitespace-nowrap px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-500/20 flex items-center justify-center gap-2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+              Log Out Device
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Floating Logout Button (Mobile) */}
+      <button
+        onClick={handleLogout}
+        className="md:hidden fixed bottom-[80px] left-4 z-40 w-12 h-12 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-500 rounded-xl shadow-lg flex items-center justify-center active:scale-90 transition-all"
+        title="Logout"
+      >
+        <svg className="w-5 h-5 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+      </button>
+
+      {/* Floating Install Button (Mobile) */}
+      {isInstallable && (
+        <div className="md:hidden fixed bottom-[80px] right-4 z-40">
+          <span className="absolute inset-0 rounded-xl bg-blue-400 animate-ping opacity-75"></span>
+          <button
+            onClick={handleInstall}
+            className="relative w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/40 flex items-center justify-center active:scale-90 transition-all"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          </button>
+        </div>
+      )}
     </div>
   )
 }

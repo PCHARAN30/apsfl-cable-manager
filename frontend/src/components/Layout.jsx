@@ -17,15 +17,18 @@ export default function Layout({ onLock, children }) {
   const { pathname } = useLocation()
   const [profileModal, setProfileModal] = useState(false)
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light')
-  const [companyName, setCompanyName] = useState('CableSync')
+  const [userName, setUserName] = useState('CableSync')
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstallable, setIsInstallable] = useState(false)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
 
   useEffect(() => {
     getSettings().then(res => {
-      if (res.data?.data?.companyName) setCompanyName(res.data.data.companyName);
-    }).catch(() => {});
+      if (res.data?.data?.companyName) setUserName(res.data.data.companyName);
+    }).catch(() => {
+      const localName = localStorage.getItem('cs_userName');
+      if (localName) setUserName(localName);
+    });
   }, []);
 
   useEffect(() => {
@@ -72,18 +75,26 @@ export default function Layout({ onLock, children }) {
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
+      window.deferredPrompt = e;
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
+    
+    if (window.deferredPrompt) {
+      setDeferredPrompt(window.deferredPrompt);
+      setIsInstallable(true);
+    }
+    
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') setIsInstallable(false);
+    const promptEvent = deferredPrompt || window.deferredPrompt;
+    if (!promptEvent) return;
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+    if (outcome === 'accepted') { setIsInstallable(false); window.deferredPrompt = null; }
     setDeferredPrompt(null);
   };
 
@@ -101,7 +112,7 @@ export default function Layout({ onLock, children }) {
       {/* WhatsApp Style Mobile Header */}
       <header className="md:hidden sticky top-0 h-[60px] bg-[#075E54] dark:bg-slate-800 z-50 flex items-center justify-between px-4 transition-colors shadow-sm">
         <div className="flex items-center">
-          <h2 className="font-display font-bold text-[15px] text-white">{companyName}</h2>
+          <h2 className="font-display font-bold text-[15px] text-white">{userName}</h2>
           {isOffline && <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-sm">OFFLINE</span>}
         </div>
         <div className="flex items-center gap-3 text-white">
@@ -134,7 +145,7 @@ export default function Layout({ onLock, children }) {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-display font-extrabold text-xl text-white tracking-tight leading-none">{companyName}</h2>
+              <h2 className="font-display font-extrabold text-xl text-white tracking-tight leading-none">{userName}</h2>
               {isOffline && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">OFFLINE</span>}
             </div>
             <p className="text-xs text-yellow-400 font-medium tracking-wide mt-1">Manager</p>
