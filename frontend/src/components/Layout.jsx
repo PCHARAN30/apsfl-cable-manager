@@ -21,8 +21,6 @@ export default function Layout({ onLock, children }) {
   const [deferredPrompt, setDeferredPrompt] = useState(null)
   const [isInstallable, setIsInstallable] = useState(false)
   const [isOffline, setIsOffline] = useState(!navigator.onLine)
-  const [showNav, setShowNav] = useState(true)
-  const lastScrollY = useRef(0)
 
   useEffect(() => {
     getSettings().then(res => {
@@ -87,20 +85,6 @@ export default function Layout({ onLock, children }) {
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') setIsInstallable(false);
     setDeferredPrompt(null);
-  };
-
-  const handleScroll = (e) => {
-    const currentScrollY = e.target.scrollTop;
-    
-    if (currentScrollY <= 20) {
-      setShowNav(true);
-    } else if (currentScrollY > lastScrollY.current + 10) {
-      setShowNav(false);
-    } else if (currentScrollY < lastScrollY.current - 10) {
-      setShowNav(true);
-    }
-    
-    lastScrollY.current = currentScrollY;
   };
 
   const navItems = [
@@ -191,14 +175,14 @@ export default function Layout({ onLock, children }) {
       </aside>
 
       {/* Main Page Content */}
-      <main onScroll={handleScroll} className="flex-1 overflow-y-auto p-3 pb-[100px] md:p-8 md:pb-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
+      <main className="flex-1 overflow-y-auto p-3 pb-[100px] md:p-8 md:pb-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
         <div className="max-w-7xl mx-auto w-full">
           {children}
         </div>
       </main>
 
       {/* Mobile Bottom Navigation Tab Bar (WhatsApp / Material 3 Style) */}
-      <nav className={`md:hidden fixed bottom-0 left-0 right-0 h-[65px] bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex justify-around items-center px-1 pb-safe shadow-[0_-8px_15px_rgba(0,0,0,0.03)] transition-transform duration-300 ease-in-out ${showNav ? 'translate-y-0' : 'translate-y-full'}`}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[65px] bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex justify-around items-center px-1 pb-safe shadow-[0_-8px_15px_rgba(0,0,0,0.03)] transition-transform duration-300 ease-in-out translate-y-0">
         {navItems.map(item => {
           const isActive = pathname === item.path;
           return (

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { getCustomers, markUnpaid, deleteCustomer, bulkDeleteCustomers, getPonStats } from '../services/api'
 import { useLang } from '../context/LanguageContext'
@@ -8,33 +9,6 @@ import ViewCustomerModal from '../components/ViewCustomerModal'
 import EditCustomerModal from '../components/EditCustomerModal'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'
-
-// Custom hook for debouncing search inputs
-function useDebounce(value, delay = 300) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debouncedValue;
-}
-
-// Helper component to highlight search terms in text
-const HighlightMatch = ({ text, highlight }) => {
-  if (!highlight || !text) return <>{text}</>;
-  const parts = String(text).split(new RegExp(`(${highlight})`, 'gi'));
-  return (
-    <>
-      {parts.map((part, i) => 
-        part.toLowerCase() === String(highlight).toLowerCase() ? (
-          <span key={i} className="bg-emerald-400/40 text-inherit rounded-sm px-0.5">{part}</span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </>
-  );
-};
 
 const StatusBadge = ({ status }) => {
   const cls = { PAID:'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20', UNPAID:'bg-red-500/10 text-red-500 border border-red-500/20', PARTIAL:'bg-amber-500/10 text-amber-500 border border-amber-500/20' }
@@ -48,13 +22,11 @@ const StatusBadge = ({ status }) => {
 }
 
 export default function Customers() {
+  const navigate = useNavigate()
   const { t } = useLang()
   const [customers, setCustomers] = useState([])
   const [total, setTotal]         = useState(0)
   const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState('')
-  const debouncedSearch           = useDebounce(search, 300)
-  const [showSearch, setShowSearch] = useState(false)
   const [statusFilter, setStatus] = useState('ALL')
   const [ponFilter, setPonFilter] = useState('')
   const [availablePons, setAvailablePons] = useState([])
@@ -88,7 +60,6 @@ export default function Customers() {
     setLoading(true)
     try {
       const params = { limit, page }
-      if (debouncedSearch) params.search = debouncedSearch
       if (statusFilter !== 'ALL') params.status = statusFilter
       if (ponFilter) params.pon = ponFilter
       const res = await getCustomers(params)
@@ -97,7 +68,7 @@ export default function Customers() {
       setSelectedIds([]) // Clear selection on page/filter change
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }
-  }, [debouncedSearch, statusFilter, ponFilter, page])
+  }, [statusFilter, ponFilter, page])
 
   useEffect(() => { load() }, [load])
 
@@ -145,102 +116,59 @@ export default function Customers() {
 
   return (
     <div className="page !mt-0 !pt-0">
-      {/* Top Section (Sticky Container) */}
-      <div className="sticky top-0 z-40 bg-[var(--bg-base)] pb-3 -mt-3 pt-0 -mx-3 px-3 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8 border-b border-[var(--border-color)] md:border-none shadow-sm md:shadow-none mb-3 md:mb-0">
-
-        {/* Mobile Search & Chips Block */}
-        <div className="md:hidden -mx-3 mb-2 flex flex-col bg-[#075E54] dark:bg-slate-800 shadow-sm transition-colors relative z-50">
-          
-          {/* Inline Expandable Search */}
-          {showSearch && (
-            <div className="px-2 pt-2 pb-1 flex items-center gap-1 slide-down bg-[#075E54] dark:bg-slate-800">
-              <button onClick={() => {setShowSearch(false); setSearch('');}} className="p-2 text-white hover:bg-white/10 rounded-full transition-colors">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-              </button>
-              <input autoFocus className="flex-1 bg-transparent border-none text-white placeholder-emerald-100/70 text-[15px] focus:ring-0 outline-none py-2 px-1" placeholder="Search customers..." value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
-              {search && (
-                <button onClick={() => setSearch('')} className="p-2 text-white hover:bg-white/10 rounded-full transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      {/* Top Section */}
+      <div className="bg-[var(--bg-base)] pb-3 -mt-3 pt-0 -mx-3 px-3 md:sticky md:top-0 md:z-40 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8 border-b border-[var(--border-color)] md:border-none shadow-sm md:shadow-none mb-3 md:mb-0 transition-all">
+          <div className="fade-in flex flex-col">
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 md:pt-0">
+              <div>
+                <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('customers')}</h1>
+                <p className="text-slate-600 dark:text-slate-400 font-medium" style={{ fontSize:13, marginTop:2 }}>{total} {t('totalRecords')}</p>
+              </div>
+              <div className="hidden md:flex items-center gap-3">
+                <button onClick={() => navigate('/search')} className="btn-secondary">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Search
                 </button>
-              )}
+                <button onClick={() => setAddModal(true)} className="btn-primary">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  {t('addCustomer')}
+                </button>
+              </div>
             </div>
-          )}
-          
-          {/* Mobile Chips */}
-          <div className="px-3 py-2 flex gap-2 overflow-x-auto custom-scrollbar">
-            {TABS.map(s => (
-              <button 
-                key={s} 
-                onClick={()=>{setStatus(s); setPage(1)}}
-                className={`px-4 py-1.5 rounded-full text-[11px] font-bold text-center transition-all duration-200 whitespace-nowrap ${statusFilter === s ? 'bg-emerald-500 text-white shadow-md scale-105' : 'bg-black/20 text-emerald-100/70 hover:bg-black/30 hover:text-white'}`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Header */}
-        <div className="hidden md:flex fade-up flex-wrap items-center justify-between gap-3 md:pt-4">
-          <div>
-            <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('customers')}</h1>
-            <p className="text-slate-600 dark:text-slate-400 font-medium" style={{ fontSize:13, marginTop:2 }}>{total} {t('totalRecords')}</p>
-          </div>
-          <button onClick={() => setAddModal(true)} className="hidden md:flex btn-primary">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            {t('addCustomer')}
-          </button>
-        </div>
-
-        {/* Filters */}
-        <div className="fade-up stagger-1 flex flex-col md:flex-row gap-4 mt-0 md:mt-6">
-          <div style={{ position:'relative', flex:1 }} className="hidden md:block w-full">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input className="w-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-sm rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent outline-none transition-all py-2.5 pr-4 pl-10 shadow-inner" placeholder="Search by name, CAF, phone..."
-            value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
-          </div>
-          
-          {/* PON Filter Dropdown */}
-          <div className="relative w-max md:w-auto">
-            <select
-              value={ponFilter}
-              onChange={(e) => { setPonFilter(e.target.value); setPage(1); }}
-              className="appearance-none h-full bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-full md:rounded-xl pl-9 md:pl-4 pr-9 md:pr-10 py-2 md:py-2.5 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-bold md:font-medium shadow-sm md:shadow-inner transition-all"
-            >
-              <option value="">All PONs</option>
-              {availablePons.map(pon => (
-                <option key={pon} value={pon}>{pon} ({ponStats.get(pon) || 0}/128)</option>
+            {/* Filters */}
+            <div className="flex items-center gap-2 mt-4 overflow-x-auto custom-scrollbar pb-2 w-full">
+              {TABS.map(s => (
+                <button 
+                  key={s} 
+                  onClick={()=>{setStatus(s); setPage(1)}}
+                  className={`px-3 py-1.5 shrink-0 rounded-full text-xs font-bold text-center transition-all duration-200 whitespace-nowrap ${statusFilter === s ? 'bg-emerald-500 text-white shadow-md scale-105' : 'bg-[var(--surface2)] text-[var(--text-muted)] border border-[var(--border-color)] hover:bg-[var(--border-color)] hover:text-[var(--text-base)]'}`}
+                >
+                  {s}
+                </button>
               ))}
-            </select>
-            <div className="absolute inset-y-0 left-3 md:hidden flex items-center pointer-events-none text-emerald-500">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-            </div>
-            <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+              <div className="relative shrink-0 ml-1">
+                <select
+                  value={ponFilter}
+                  onChange={(e) => { setPonFilter(e.target.value); setPage(1); }}
+                  className="appearance-none bg-[var(--surface2)] border border-[var(--border-color)] text-[var(--text-base)] text-xs rounded-full pl-3 pr-7 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer font-bold shadow-sm transition-all"
+                >
+                  <option value="">All PONs</option>
+                  {availablePons.map(pon => (
+                    <option key={pon} value={pon}>{pon} ({ponStats.get(pon) || 0})</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-slate-400">
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Desktop Chips */}
-        <div className="hidden md:flex fade-up stagger-1 w-full mt-4 gap-2">
-          {TABS.map(s => (
-            <button 
-              key={s} 
-              onClick={()=>{setStatus(s); setPage(1)}}
-              className={`px-5 py-2 rounded-full text-sm font-bold text-center transition-all duration-200 ${statusFilter === s ? 'bg-emerald-500 text-white shadow-md scale-105' : 'bg-[var(--surface2)] text-[var(--text-muted)] border border-[var(--border-color)] hover:bg-[var(--border-color)] hover:text-[var(--text-base)]'}`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Bulk Actions Bar */}
@@ -305,15 +233,15 @@ export default function Customers() {
                       />
                     </td>
                     <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + idx + 1}</td>
-                    <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>
-                      <HighlightMatch text={c.name} highlight={debouncedSearch} />
+                    <td className="tbl-cell" style={{ fontWeight:800, color:'var(--text-base)', fontSize: 16 }}>
+                      {c.name}
                       {expiring && <span style={{ marginLeft:6, fontSize:11, color:'#fbbf24', fontFamily:'JetBrains Mono,monospace' }}>⚠{days}d</span>}
                     </td>
-                    <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>
-                      <HighlightMatch text={c.cafNumber} highlight={debouncedSearch} />
+                    <td className="tbl-cell font-bold text-[var(--text-base)]" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:15 }}>
+                      {c.cafNumber}
                     </td>
-                    <td className="tbl-cell">
-                      {c.phone ? <HighlightMatch text={c.phone} highlight={debouncedSearch} /> : 'NA'}
+                    <td className="tbl-cell font-bold text-[var(--text-base)]" style={{ fontSize:15 }}>
+                      {c.phone || 'NA'}
                     </td>
                     <td className="tbl-cell font-medium text-slate-600 dark:text-slate-400" style={{ fontSize: 12 }}>{c.address||'NA'}</td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', color:'var(--text-base)' }}>₹{c.planAmount||291}</td>
@@ -383,12 +311,12 @@ export default function Customers() {
                     onChange={() => toggleSelect(c._id)}
                   />
                   <div>
-                    <h3 className="font-bold text-[var(--text-base)] text-base leading-tight">
-                      <HighlightMatch text={c.name} highlight={debouncedSearch} />
+                    <h3 className="font-extrabold text-[var(--text-base)] text-lg leading-tight mb-1">
+                      {c.name}
                     </h3>
-                    <p className="text-xs text-slate-500 font-mono mt-1">
-                      <HighlightMatch text={c.cafNumber} highlight={debouncedSearch} />
-                      {c.phone && <> <span className="mx-1">|</span> 📞 <HighlightMatch text={c.phone} highlight={debouncedSearch} /></>}
+                    <p className="text-sm text-[var(--text-base)] font-bold font-mono">
+                      {c.cafNumber}
+                      {c.phone && <> <span className="mx-1 text-[var(--text-muted)]">|</span> 📞 {c.phone}</>}
                     </p>
                   </div>
                 </div>
@@ -461,28 +389,24 @@ export default function Customers() {
       )}
 
       {/* Floating Search Button (Mobile) */}
-      {!showSearch && (
-        <button
-          onClick={() => setShowSearch(true)}
-          className="md:hidden fixed bottom-[140px] right-4 z-40 w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl shadow-lg shadow-black/10 flex items-center justify-center active:scale-90 transition-all"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-        </button>
-      )}
+      <button
+        onClick={() => navigate('/search')}
+        className="md:hidden fixed bottom-[140px] right-4 z-40 w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl shadow-lg shadow-black/10 flex items-center justify-center active:scale-90 transition-all"
+      >
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
 
       {/* Floating Action Button (Mobile) */}
-      {!showSearch && (
-        <button
-          onClick={() => setAddModal(true)}
-          className="md:hidden fixed bottom-[80px] right-4 z-40 w-12 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-xl shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-      )}
+      <button
+        onClick={() => setAddModal(true)}
+        className="md:hidden fixed bottom-[80px] right-4 z-40 w-12 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-xl shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
       {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}
