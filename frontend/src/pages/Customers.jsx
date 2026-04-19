@@ -147,8 +147,17 @@ export default function Customers() {
     <div className="page !mt-0 !pt-0">
       {/* Top Section (Sticky Container) */}
       <div className="bg-[var(--bg-base)] pb-0 -mt-3 pt-0 -mx-3 px-3 md:sticky md:top-0 md:z-40 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8">
+
+        {/* Mobile Search Backdrop */}
+        {showSearch && (
+          <div 
+            className="fixed inset-0 z-[45] bg-slate-900/40 backdrop-blur-sm md:hidden transition-opacity"
+            onClick={() => { setShowSearch(false); setSearch(''); }}
+          />
+        )}
+
         {/* Mobile Search & Chips Block */}
-        <div className="md:hidden -mx-3 mb-2 flex flex-col bg-[#075E54] dark:bg-slate-800 shadow-sm transition-colors">
+        <div className="md:hidden -mx-3 mb-2 flex flex-col bg-[#075E54] dark:bg-slate-800 shadow-sm transition-colors relative z-50">
           
           {/* Inline Expandable Search */}
           {showSearch && (
@@ -329,6 +338,11 @@ export default function Customers() {
                         <button onClick={()=>setPayModal(c)} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-[#22C55E] hover:bg-green-700 transition-colors">
                           {t('pay')}
                         </button>
+                    {c.status !== 'UNPAID' && (
+                      <button onClick={()=>handleMarkUnpaid(c)} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-red-500 hover:bg-red-600 transition-colors" title="Mark Unpaid">
+                        Unpaid
+                      </button>
+                    )}
                         <button onClick={()=>setEditModal(c)} className="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 bg-slate-200 hover:bg-slate-300 transition-colors">
                           {t('edit')}
                         </button>
@@ -392,29 +406,36 @@ export default function Customers() {
               {/* Middle: Details */}
               <div className="grid grid-cols-2 gap-y-3 mb-4 text-sm mt-4 pl-7">
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Package</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Package</p>
                   <p className="font-mono font-medium text-[var(--text-base)]">₹{c.planAmount||291} <span className="text-xs text-slate-400">| PON: {c.ponNumber||'NA'}</span></p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Balance</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Balance</p>
                   <p className="font-mono font-medium text-amber-500">{c.carryOver>0 ? `₹${c.carryOver}` : 'Nil'}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
-                  <p className="font-mono text-slate-600 dark:text-slate-300">{fmtDate(c.lastPaymentDate)}</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
+                  <p className="font-mono font-medium text-slate-800 dark:text-slate-200">{fmtDate(c.lastPaymentDate)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
-                  <p className={`font-mono ${isExpired ? 'text-red-500 font-bold' : 'text-slate-600 dark:text-slate-300'}`}>{fmtDate(c.validTill)}</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
+                  <p className={`font-mono font-medium ${isExpired ? 'text-red-500 font-bold' : 'text-slate-800 dark:text-slate-200'}`}>{fmtDate(c.validTill)}</p>
                 </div>
               </div>
 
               {/* Bottom: Actions */}
               <div className="pt-4 border-t border-[var(--border-color)]">
-                <button onClick={()=>setPayModal(c)} className="w-full py-3 mb-3 text-sm font-bold rounded-xl text-white bg-[#22C55E] hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                  {t('pay')}
-                </button>
+                <div className="flex gap-2 mb-3">
+                  <button onClick={()=>setPayModal(c)} className="flex-1 py-3 text-sm font-bold rounded-xl text-white bg-[#22C55E] hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex items-center justify-center gap-2">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    {t('pay')}
+                  </button>
+                  {c.status !== 'UNPAID' && (
+                    <button onClick={()=>handleMarkUnpaid(c)} className="px-4 py-3 text-sm font-bold rounded-xl text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors flex items-center justify-center" title="Mark Unpaid">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
                   <button onClick={()=>setEditModal(c)} className="flex-1 py-2.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
                     {t('edit')}
@@ -436,21 +457,21 @@ export default function Customers() {
 
       {/* Pagination Controls */}
       {total > limit && (
-        <div className="mt-4 p-4 rounded-xl border border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
-          <span style={{ fontSize:13, color:'var(--text-muted)' }}>
-            Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
-          </span>
+        <div className="mt-4 p-4 rounded-xl border border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-center sm:justify-start bg-[var(--surface2)]">
           <div className="flex gap-2">
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
             <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
           </div>
+          <span style={{ fontSize:13, color:'var(--text-muted)' }}>
+            Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
+          </span>
         </div>
       )}
 
       {/* Floating Search Button (Mobile) */}
       <button
         onClick={() => setShowSearch(true)}
-        className="md:hidden fixed bottom-[130px] right-4 z-40 w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 rounded-full shadow-lg shadow-black/10 flex items-center justify-center active:scale-90 transition-all"
+        className="md:hidden fixed bottom-[140px] right-4 z-40 w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl shadow-lg shadow-black/10 flex items-center justify-center active:scale-90 transition-all"
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -460,7 +481,7 @@ export default function Customers() {
       {/* Floating Action Button (Mobile) */}
       <button
         onClick={() => setAddModal(true)}
-        className="md:hidden fixed bottom-[72px] right-4 z-40 w-12 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
+        className="md:hidden fixed bottom-[80px] right-4 z-40 w-12 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-xl shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
       >
         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

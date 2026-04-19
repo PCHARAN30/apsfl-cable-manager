@@ -165,25 +165,25 @@ export default function Payments() {
               
               <div className="grid grid-cols-2 gap-y-3 mb-4 text-sm mt-4">
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Amount</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Amount</p>
                   <p className="font-mono font-bold text-emerald-500">₹{p.amountPaid.toLocaleString('en-IN')}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Months</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Months</p>
                   <p className="font-mono font-medium text-[var(--text-base)]">{p.planMonths}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
-                  <p className="font-mono text-slate-600 dark:text-slate-300 text-xs">{fmtDate(p.paymentDate)}</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
+                  <p className="font-mono font-medium text-slate-800 dark:text-slate-200 text-xs">{fmtDate(p.paymentDate)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
-                  <p className="font-mono text-slate-600 dark:text-slate-300 text-xs">{p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'}</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
+                  <p className="font-mono font-medium text-slate-800 dark:text-slate-200 text-xs">{p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'}</p>
                 </div>
                 {p.notes && (
                   <div className="col-span-2">
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-0.5">Notes</p>
-                    <p className="text-xs text-slate-500">{p.notes}</p>
+                    <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Notes</p>
+                    <p className="text-xs text-slate-700 dark:text-slate-300">{p.notes}</p>
                   </div>
                 )}
               </div>
@@ -206,14 +206,14 @@ export default function Payments() {
       
       {/* Pagination Controls */}
       {total > limit && (
-        <div className="mt-4 p-4 rounded-xl border border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-between bg-[var(--surface2)]">
-          <span style={{ fontSize:13, color:'var(--text-muted)' }}>
-            Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
-          </span>
+        <div className="mt-4 p-4 rounded-xl border border-[var(--border-color)] flex flex-wrap gap-4 items-center justify-center sm:justify-start bg-[var(--surface2)]">
           <div className="flex gap-2">
             <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Previous</button>
             <button disabled={page * limit >= total} onClick={() => setPage(p => p + 1)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>Next</button>
           </div>
+          <span style={{ fontSize:13, color:'var(--text-muted)' }}>
+            Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total}
+          </span>
         </div>
       )}
       <PaymentHistoryModal 

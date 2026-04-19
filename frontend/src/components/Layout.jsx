@@ -96,10 +96,10 @@ export default function Layout({ onLock, children }) {
   ]
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 relative overflow-hidden font-sans transition-colors duration-300">
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 relative overflow-hidden font-sans transition-colors duration-300">
 
       {/* WhatsApp Style Mobile Header */}
-      <header className="md:hidden shrink-0 h-10 bg-[#075E54] dark:bg-slate-800 z-50 flex items-center justify-between px-3 transition-colors">
+      <header className="md:hidden sticky top-0 h-[60px] bg-[#075E54] dark:bg-slate-800 z-50 flex items-center justify-between px-4 transition-colors shadow-sm">
         <div className="flex items-center">
           <h2 className="font-display font-bold text-[15px] text-white">{companyName}</h2>
           {isOffline && <span className="ml-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse shadow-sm">OFFLINE</span>}
@@ -175,14 +175,14 @@ export default function Layout({ onLock, children }) {
       </aside>
 
       {/* Main Page Content */}
-      <main className="flex-1 overflow-y-auto p-3 md:p-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
+      <main className="flex-1 overflow-y-auto p-3 pb-[100px] md:p-8 md:pb-8 relative z-10 scroll-smooth bg-[var(--bg-base)]">
         <div className="max-w-7xl mx-auto w-full">
           {children}
         </div>
       </main>
 
       {/* Mobile Bottom Navigation Tab Bar (WhatsApp / Material 3 Style) */}
-      <nav className="md:hidden shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex justify-around items-center px-1 pb-1 pt-1.5 shadow-[0_-8px_15px_rgba(0,0,0,0.03)]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-[65px] bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex justify-around items-center px-1 pb-safe shadow-[0_-8px_15px_rgba(0,0,0,0.03)]">
         {navItems.map(item => {
           const isActive = pathname === item.path;
           return (
