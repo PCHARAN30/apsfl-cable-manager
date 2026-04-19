@@ -117,7 +117,7 @@ export default function Settings() {
         <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[var(--text-base)] mb-4">{t('generalSettings')}</h2>
           <div>
-            <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 block mb-2">{t('companyName')}</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-slate-400 block mb-2">{t('companyName')}</label>
             <input type="text" className="input w-full md:w-1/2" value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="e.g., CableSync Network" />
           </div>
         </div>
@@ -131,8 +131,8 @@ export default function Settings() {
           <div className="space-y-3">
             {plans.map((plan) => (
               <div key={plan.id} className="flex flex-col sm:flex-row items-center gap-3 p-4 bg-[var(--surface2)] border border-[var(--border-color)] rounded-xl">
-                 <div className="w-full sm:w-1/2"><label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">{t('planName')}</label><input type="text" className="input w-full" value={plan.name} onChange={e => updatePlan(plan.id, 'name', e.target.value)} placeholder="e.g., Basic HD" /></div>
-                 <div className="w-full sm:w-1/3"><label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Amount (₹)</label><input type="number" className="input w-full font-mono" value={plan.amount} onChange={e => updatePlan(plan.id, 'amount', Number(e.target.value))} placeholder="300" min="0" /></div>
+                 <div className="w-full sm:w-1/2"><label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">{t('planName')}</label><input type="text" className="input w-full" value={plan.name} onChange={e => updatePlan(plan.id, 'name', e.target.value)} placeholder="e.g., Basic HD" /></div>
+                 <div className="w-full sm:w-1/3"><label className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">Amount (₹)</label><input type="number" className="input w-full font-mono" value={plan.amount} onChange={e => updatePlan(plan.id, 'amount', Number(e.target.value))} placeholder="300" min="0" /></div>
                  <div className="w-full sm:w-auto mt-2 sm:mt-5 flex items-center justify-between sm:justify-end gap-4">
                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-500 hover:text-[var(--text-base)] transition-colors">
                      <input type="radio" name="defaultPlan" checked={!!plan.isDefault} onChange={() => setAsDefault(plan.id)} className="w-4 h-4 text-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)] focus:ring-emerald-500 cursor-pointer" />

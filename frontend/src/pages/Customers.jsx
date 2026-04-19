@@ -192,7 +192,7 @@ export default function Customers() {
         <div className="hidden md:flex fade-up flex-wrap items-center justify-between gap-3 md:pt-4">
           <div>
             <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('customers')}</h1>
-            <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
+            <p className="text-slate-600 dark:text-slate-400 font-medium" style={{ fontSize:13, marginTop:2 }}>{total} {t('totalRecords')}</p>
           </div>
           <button onClick={() => setAddModal(true)} className="hidden md:flex btn-primary">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -323,15 +323,15 @@ export default function Customers() {
                     <td className="tbl-cell">
                       {c.phone ? <HighlightMatch text={c.phone} highlight={debouncedSearch} /> : 'NA'}
                     </td>
-                    <td className="tbl-cell" style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.address||'NA'}</td>
+                    <td className="tbl-cell font-medium text-slate-600 dark:text-slate-400" style={{ fontSize: 12 }}>{c.address||'NA'}</td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', color:'var(--text-base)' }}>₹{c.planAmount||291}</td>
                     <td className="tbl-cell"><StatusBadge status={c.status}/></td>
-                    <td className="tbl-cell" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>{fmtDate(c.lastPaymentDate)}</td>
-                    <td className="tbl-cell" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace', color: days&&days<0?'#f87171':'var(--text-muted)' }}>
+                    <td className="tbl-cell font-semibold text-[var(--text-base)]" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>{fmtDate(c.lastPaymentDate)}</td>
+                    <td className={`tbl-cell font-semibold ${days&&days<0 ? 'text-red-500' : 'text-[var(--text-base)]'}`} style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>
                       {fmtDate(c.validTill)}
                     </td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12, color:'#fbbf24' }}>
-                      {c.carryOver>0 ? `₹${c.carryOver}` : <span style={{ color:'var(--text-dim)' }}>NA</span>}
+                      {c.carryOver>0 ? `₹${c.carryOver}` : <span className="text-slate-500 dark:text-slate-400 font-medium">NA</span>}
                     </td>
                     <td className="tbl-cell">
                       <div style={{ display:'flex', gap:6, alignItems:'center' }}>
@@ -415,11 +415,11 @@ export default function Customers() {
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
-                  <p className="font-mono font-medium text-slate-800 dark:text-slate-200">{fmtDate(c.lastPaymentDate)}</p>
+                  <p className="font-mono font-semibold text-[var(--text-base)]">{fmtDate(c.lastPaymentDate)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
-                  <p className={`font-mono font-medium ${isExpired ? 'text-red-500 font-bold' : 'text-slate-800 dark:text-slate-200'}`}>{fmtDate(c.validTill)}</p>
+                  <p className={`font-mono font-semibold ${isExpired ? 'text-red-500' : 'text-[var(--text-base)]'}`}>{fmtDate(c.validTill)}</p>
                 </div>
               </div>
 

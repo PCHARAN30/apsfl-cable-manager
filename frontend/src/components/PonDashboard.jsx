@@ -29,7 +29,7 @@ export default function PonDashboard() {
       <div className="overflow-x-auto custom-scrollbar">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[var(--border-color)] text-xs uppercase tracking-widest text-slate-500 bg-[var(--bg-surface)]">
+            <tr className="border-b border-[var(--border-color)] text-xs uppercase tracking-widest text-slate-600 dark:text-slate-400 bg-[var(--bg-surface)]">
               <th className="p-4 font-semibold">PON ID</th>
               <th className="p-4 font-semibold">Used</th>
               <th className="p-4 font-semibold">Available</th>
@@ -47,7 +47,7 @@ export default function PonDashboard() {
               return (
                 <tr key={ponId} className="hover:bg-[var(--glass-bg)] transition-colors">
                   <td className="p-4 font-bold text-[var(--text-base)]">{ponId}</td>
-                  <td className="p-4 text-[var(--text-muted)]">{used} / 128</td>
+                  <td className="p-4 text-slate-600 dark:text-slate-400 font-medium">{used} / 128</td>
                   <td className="p-4">
                     <span className={`font-mono font-bold ${isFull ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-emerald-400'}`}>
                       {isFull ? '0' : available}

@@ -85,23 +85,38 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer: initial
   const isPendingOverdue = pendingStart < new Date(new Date().setHours(0,0,0,0));
 
   const statusStyles = {
-    PAID: 'bg-emerald-500/10 border-l-4 border-emerald-500',
-    PARTIAL: 'bg-amber-500/10 border-l-4 border-amber-500',
-    PENDING: 'bg-amber-500/10 border-l-4 border-amber-500',
-    EXPIRED: 'bg-red-500/10 border-l-4 border-red-500',
+    PAID: 'border-emerald-500/20 hover:border-emerald-500/40',
+    PARTIAL: 'border-amber-500/20 hover:border-amber-500/40',
+    PENDING: 'bg-amber-500/10 border-amber-500/20',
+    EXPIRED: 'bg-red-500/10 border-red-500/20',
   }
 
+  // Group payments by Year -> Month
+  const grouped = filteredPayments.reduce((acc, p) => {
+    const d = new Date(p.validFrom || p.paymentDate || new Date());
+    const year = d.getFullYear();
+    const month = d.toLocaleString('en-IN', { month: 'long' });
+    const mIdx = d.getMonth();
+    
+    if (!acc[year]) acc[year] = {};
+    if (!acc[year][month]) acc[year][month] = { index: mIdx, payments: [] };
+    
+    acc[year][month].payments.push(p);
+    return acc;
+  }, {});
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] w-full max-w-2xl rounded-3xl shadow-2xl shadow-black/50 flex flex-col max-h-[85vh] overflow-hidden scale-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[6px] transition-opacity" onClick={onClose}/>
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] w-full max-w-2xl rounded-3xl shadow-2xl shadow-black/50 flex flex-col max-h-[80vh] overflow-hidden scale-in relative z-10">
         
         {/* Header */}
         <div className="p-6 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--glass-bg)]">
           <div>
-            <h2 className="text-xl font-bold text-[var(--text-base)] tracking-tight">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-white tracking-tight">
               {t('paymentHistoryFor')} <span className="text-orange-500">{customer.name}</span>
             </h2>
-            <p className="text-sm text-slate-400 mt-1 font-mono">CAF: {customer.cafNumber}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 font-medium mt-1 font-mono">CAF: {customer.cafNumber}</p>
           </div>
           <button 
             onClick={onClose}
@@ -125,9 +140,9 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer: initial
         {/* Body */}
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-[var(--bg-surface)]">
           {loading ? (
-            <div className="text-center py-10 text-slate-500 animate-pulse">Loading subscription history...</div>
+            <div className="text-center py-10 text-slate-600 dark:text-slate-400 font-medium animate-pulse">Loading subscription history...</div>
           ) : (
-            <>
+            <div className="flex flex-col gap-6">
               
               {/* Timeline Reset Banner */}
               {customer.billingStartDate && !isSearching && payments.length === 0 && (
@@ -142,57 +157,72 @@ export default function PaymentHistoryModal({ isOpen, onClose, customer: initial
                  </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Pending Cycle */}
-                {!isSearching && (
-                  <div className={`p-4 rounded-lg ${isPendingOverdue ? statusStyles.EXPIRED : statusStyles.PENDING}`}>
-                    <div className="flex justify-between items-start">
-                      <div className="font-bold text-sm text-[var(--text-base)]">
-                        {formatDate(pendingStart)} → {formatDate(pendingEnd)}
-                      </div>
-                      <span className={`text-xs font-bold ${isPendingOverdue ? 'text-red-600' : 'text-amber-600'}`}>
-                        {isPendingOverdue ? '❌ EXPIRED' : '⏳ PENDING'}
-                      </span>
+              {/* Pending Cycle */}
+              {!isSearching && (
+                <div className={`p-4 rounded-xl border ${isPendingOverdue ? statusStyles.EXPIRED : statusStyles.PENDING}`}>
+                  <div className="flex justify-between items-start">
+                    <div className="font-semibold text-[var(--text-base)] text-sm">
+                      {formatDate(pendingStart)} → {formatDate(pendingEnd)}
                     </div>
-                    <div className="text-xs text-slate-500 mt-2">
-                      ₹{customer.planAmount || 300} | Next Bill
-                    </div>
+                    <span className={`text-xs font-bold ${isPendingOverdue ? 'text-red-500' : 'text-amber-500'}`}>
+                      {isPendingOverdue ? '❌ EXPIRED' : '⏳ PENDING'}
+                    </span>
                   </div>
-                )}
-
-                {/* Payment Cycles */}
-                {filteredPayments.map(p => {
-                  const isPartial = p.paymentType === 'PARTIAL';
-                  const vfStr = formatDate(p.validFrom || p.paymentDate);
-                  const vtStr = formatDate(p.validTill);
-                  const isDebtOnly = vfStr === vtStr;
-                  
-                  return (
-                    <div key={p._id} className={`group p-4 rounded-lg relative ${isPartial ? statusStyles.PARTIAL : statusStyles.PAID}`}>
-                      <div className="flex justify-between items-start">
-                        <div className="font-bold text-sm text-[var(--text-base)]">
-                          {isDebtOnly ? 'Debt / Partial Payment' : `${vfStr} → ${vtStr}`}
-                        </div>
-                        <span className={`text-xs font-bold ${isPartial ? 'text-amber-600' : 'text-green-600'}`}>
-                          {isPartial ? '🟠 PARTIAL' : '✅ PAID'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-500 mt-2">
-                        <span className="font-mono">₹{p.amountPaid}</span> | Paid on {formatDate(p.paymentDate)}
-                      </div>
-                      <button onClick={() => handleDeletePayment(p)} className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-60 transition-opacity text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-500/10" title="Delete Payment">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {filteredPayments.length === 0 && isSearching && (
-                <div className="text-center py-8 text-slate-500">No matching payments found.</div>
+                  <div className="text-xs text-slate-500 font-medium mt-2">
+                    ₹{customer.planAmount || 300} | Next Bill
+                  </div>
+                </div>
               )}
 
-            </>
+              {/* Payment Cycles grouped by Year/Month */}
+              {Object.keys(grouped).sort((a,b)=>b-a).map(year => (
+                <div key={year} className="flex flex-col gap-4">
+                  <h3 className="text-lg font-extrabold text-[var(--text-base)] border-b border-[var(--border-color)] pb-2">{year}</h3>
+                  
+                  {Object.keys(grouped[year]).sort((a,b)=>grouped[year][b].index - grouped[year][a].index).map(month => (
+                    <div key={month} className="relative">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">{month}</span>
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1"></div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-2 md:pl-4 border-l-2 border-slate-200 dark:border-slate-800">
+                        {grouped[year][month].payments.map(p => {
+                          const isPartial = p.paymentType === 'PARTIAL';
+                          const vfStr = formatDate(p.validFrom || p.paymentDate);
+                          const vtStr = formatDate(p.validTill);
+                          const isDebtOnly = vfStr === vtStr;
+                          
+                          return (
+                            <div key={p._id} className={`group p-4 rounded-xl border bg-slate-50 dark:bg-slate-800/50 relative transition-colors ${isPartial ? statusStyles.PARTIAL : statusStyles.PAID}`}>
+                              <div className="flex justify-between items-start">
+                                <div className="font-semibold text-sm text-[var(--text-base)]">
+                                  {isDebtOnly ? 'Debt / Partial Payment' : `${vfStr} → ${vtStr}`}
+                                </div>
+                                <span className={`text-xs font-bold ${isPartial ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                  {isPartial ? '🟠 PARTIAL' : '✅ PAID'}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-500 font-medium mt-2">
+                                <span className="font-mono font-semibold text-emerald-500">₹{p.amountPaid}</span> | Paid on <span className="font-semibold text-[var(--text-base)]">{formatDate(p.paymentDate)}</span>
+                              </div>
+                              <button onClick={() => handleDeletePayment(p)} className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-500/10" title="Delete Payment">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+              {filteredPayments.length === 0 && isSearching && (
+                <div className="text-center py-8 text-slate-500 font-medium">No matching payments found.</div>
+              )}
+
+            </div>
           )}
         </div>
       </div>

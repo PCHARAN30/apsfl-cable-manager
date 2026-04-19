@@ -56,7 +56,7 @@ export default function SearchCAF() {
       <div className="sticky top-0 z-40 bg-[var(--bg-base)] pb-4 -mt-4 pt-2 -mx-4 px-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8 border-b border-[var(--border-color)] mb-4 shadow-sm md:shadow-none">
         <div className="fade-up text-center mb-4 mt-2">
           <h1 className="font-display font-extrabold text-3xl text-[var(--text-base)] mb-2 tracking-tight">Quick Search</h1>
-          <p className="text-[var(--text-muted)] text-xs md:text-sm">Enter a CAF number, phone number, or name to view customer details.</p>
+          <p className="text-slate-600 dark:text-slate-400 font-medium text-xs md:text-sm">Enter a CAF number, phone number, or name to view customer details.</p>
         </div>
 
         <div className="fade-up stagger-1 relative max-w-2xl mx-auto">
@@ -89,9 +89,9 @@ export default function SearchCAF() {
               <StatusBadge status={c.status} />
             </div>
             <div className="flex-1">
-              <p className="font-mono text-sm text-slate-400 mb-1">CAF: <span className="text-[var(--text-base)]">{c.cafNumber}</span></p>
-              <p className="text-sm text-slate-400">Package: <span className="font-mono text-[var(--text-base)]">{c.planName || 'HomeBasic'}</span> {c.phone && `• Ph: ${c.phone}`}</p>
-              <p className="text-sm text-slate-400 mt-0.5 mb-4">Conn. Date: <span className="text-[var(--text-base)]">{c.connectionDate ? new Date(c.connectionDate).toLocaleDateString('en-IN') : 'NA/Unknown'}</span></p>
+              <p className="font-mono text-sm text-slate-600 dark:text-slate-400 font-medium mb-1">CAF: <span className="font-bold text-slate-900 dark:text-white">{c.cafNumber}</span></p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Package: <span className="font-mono font-bold text-slate-900 dark:text-white">{c.planName || 'HomeBasic'}</span> {c.phone && `• Ph: ${c.phone}`}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium mt-0.5 mb-4">Conn. Date: <span className="font-bold text-[var(--text-base)]">{c.connectionDate ? new Date(c.connectionDate).toLocaleDateString('en-IN') : 'NA/Unknown'}</span></p>
             </div>
             <div className="pt-4 border-t border-[var(--border-color)] flex gap-3 mt-auto">
               <button onClick={(e) => { e.stopPropagation(); setPayModal(c) }} className="flex-1 py-3 text-sm font-bold rounded-xl text-white bg-[#22C55E] hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex items-center justify-center gap-2">

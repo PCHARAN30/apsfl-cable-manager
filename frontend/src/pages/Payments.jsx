@@ -55,7 +55,7 @@ export default function Payments() {
         <div className="fade-up flex flex-wrap items-center justify-between gap-2 md:gap-3 mb-2 md:mb-1">
           <div>
             <h1 className="text-xl md:text-2xl" style={{ fontFamily:'Sora,sans-serif', fontWeight:800, color:'var(--text-base)' }}>{t('paymentHistory')}</h1>
-            <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>{total} {t('totalRecords')}</p>
+            <p className="text-slate-600 dark:text-slate-400 font-medium" style={{ fontSize:13, marginTop:2 }}>{total} {t('totalRecords')}</p>
           </div>
           <div className="text-sm md:text-base" style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:700, color:'#34d399' }}>
             {t('total')}: ₹{totalAmt.toLocaleString('en-IN')}
@@ -65,20 +65,19 @@ export default function Payments() {
         {/* Filters */}
         <div className="fade-up stagger-1 mt-2 md:mt-4 flex flex-row gap-2 md:gap-3 items-end bg-[var(--surface2)] p-2 md:p-3 rounded-xl border border-[var(--border-color)]">
           <div className="flex-1">
-            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">{t('from')}</label>
+            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">{t('from')}</label>
             <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>setFrom(e.target.value)}/>
           </div>
           <div className="flex-1">
-            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">{t('to')}</label>
+            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">{t('to')}</label>
             <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
           </div>
           <div className="flex-1">
-            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">Method</label>
+            <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">Method</label>
             <select className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer" value={method} onChange={e=>{setMethod(e.target.value); setPage(1)}}>
               <option value="">All</option>
               <option value="Cash">Cash</option>
-              <option value="UPI">UPI</option>
-              <option value="Postdated Check">Check</option>
+              <option value="UPI/Online">UPI/Online</option>
             </select>
           </div>
         </div>
@@ -108,20 +107,20 @@ export default function Payments() {
               ) : payments.map((p,i)=>(
                 <tr key={p._id} className="tbl-row">
                   <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + i + 1}</td>
-                  <td className="tbl-cell" style={{ fontWeight:500, color:'var(--text-base)' }}>{p.customerName}</td>
-                  <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{p.cafNumber}</td>
+                  <td className="tbl-cell font-semibold text-slate-900 dark:text-white">{p.customerName}</td>
+                  <td className="tbl-cell text-slate-600 dark:text-slate-400" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{p.cafNumber}</td>
                   <td className="tbl-cell">
                     <span className={p.paymentType==='FULL'?'badge-paid':'badge-partial'}>{p.paymentType}</span>
                   </td>
-                  <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', fontWeight:700, color:'#34d399' }}>
+                  <td className="tbl-cell font-semibold text-emerald-500" style={{ fontFamily:'JetBrains Mono,monospace' }}>
                     ₹{p.amountPaid.toLocaleString('en-IN')}
                   </td>
-                  <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace' }}>{p.planMonths}</td>
-                  <td className="tbl-cell" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace', color:'var(--text-muted)' }}>
+                  <td className="tbl-cell text-slate-600 dark:text-slate-400" style={{ fontFamily:'JetBrains Mono,monospace' }}>{p.planMonths}</td>
+                  <td className="tbl-cell font-semibold text-[var(--text-base)]" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>
                     {p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'}
                   </td>
-                  <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{fmtDate(p.paymentDate)}</td>
-                  <td className="tbl-cell" style={{ fontSize:12, color:'var(--text-muted)' }}>{p.notes||'NA'}</td>
+                  <td className="tbl-cell font-semibold text-[var(--text-base)]" style={{ fontSize:12 }}>{fmtDate(p.paymentDate)}</td>
+                  <td className="tbl-cell italic text-slate-500" style={{ fontSize:12 }}>{p.notes||'NA'}</td>
                   <td className="tbl-cell">
                     <div style={{ display:'flex', gap:6, alignItems:'center' }}>
                       <button onClick={()=>setHistoryModal({ _id: p.customer, name: p.customerName, cafNumber: p.cafNumber })}
@@ -157,8 +156,8 @@ export default function Payments() {
             <div key={p._id} className={`relative p-4 rounded-xl border shadow-sm border-l-4 ${isPartial ? 'border-l-amber-500 bg-[var(--bg-surface)] border-[var(--border-color)]' : 'border-l-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)]'}`}>
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-bold text-[var(--text-base)] text-base leading-tight">{p.customerName}</h3>
-                  <p className="text-xs text-slate-500 font-mono mt-1">{p.cafNumber}</p>
+                  <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">{p.customerName}</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1">{p.cafNumber}</p>
                 </div>
                 <span className={isPartial ? 'badge-partial' : 'badge-paid'}>{p.paymentType}</span>
               </div>
@@ -166,24 +165,24 @@ export default function Payments() {
               <div className="grid grid-cols-2 gap-y-3 mb-4 text-sm mt-4">
                 <div>
                   <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Amount</p>
-                  <p className="font-mono font-bold text-emerald-500">₹{p.amountPaid.toLocaleString('en-IN')}</p>
+                  <p className="font-mono font-semibold text-emerald-500">₹{p.amountPaid.toLocaleString('en-IN')}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Months</p>
-                  <p className="font-mono font-medium text-[var(--text-base)]">{p.planMonths}</p>
+                  <p className="font-mono font-medium text-slate-600 dark:text-slate-400">{p.planMonths}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Paid On</p>
-                  <p className="font-mono font-medium text-slate-800 dark:text-slate-200 text-xs">{fmtDate(p.paymentDate)}</p>
+                  <p className="font-mono font-semibold text-[var(--text-base)] text-xs">{fmtDate(p.paymentDate)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Valid Till</p>
-                  <p className="font-mono font-medium text-slate-800 dark:text-slate-200 text-xs">{p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'}</p>
+                  <p className="font-mono font-semibold text-[var(--text-base)] text-xs">{p.validTill ? new Date(p.validTill).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'}</p>
                 </div>
                 {p.notes && (
                   <div className="col-span-2">
                     <p className="text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">Notes</p>
-                    <p className="text-xs text-slate-700 dark:text-slate-300">{p.notes}</p>
+                    <p className="text-xs italic text-slate-500">{p.notes}</p>
                   </div>
                 )}
               </div>

@@ -74,14 +74,14 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
   if (receipt) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[6px] transition-opacity" onClick={onClose}/>
         <div className="relative w-full max-w-sm p-6 rounded-3xl bg-[var(--bg-surface)] text-[var(--text-base)] border border-[var(--border-color)] shadow-2xl scale-in overflow-hidden">
           <div className="text-center">
             <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
             </div>
             <h2 className="text-2xl font-bold mb-1">Payment Successful</h2>
-            <p className="text-[var(--text-muted)] text-sm mb-6">{receipt.date}</p>
+            <p className="text-[var(--text-base)] font-bold text-sm mb-6">{receipt.date}</p>
             
             <div className="bg-[var(--surface2)] rounded-2xl p-5 text-left space-y-3 mb-8 border border-[var(--border-color)]">
                 <div className="flex justify-between"><span className="text-[var(--text-muted)]">Customer</span><span className="font-bold text-[var(--text-base)]">{receipt.customerName}</span></div>
@@ -101,8 +101,8 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={onClose}/>
-      <div className="relative w-full max-w-md max-h-[85vh] flex flex-col rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in overflow-hidden">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[6px] transition-opacity" onClick={onClose}/>
+      <div className="relative w-full max-w-md max-h-[80vh] flex flex-col rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-2xl shadow-black/60 scale-in overflow-hidden">
         
         {/* Header */}
         <div className="p-5 border-b border-[var(--border-color)] flex justify-between items-start bg-[var(--glass-bg)] shrink-0">
@@ -139,7 +139,7 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
           {customer.status !== 'UNPAID' && (
             <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginTop: 4, paddingTop: 4, borderTop: '1px solid var(--border-color)' }}>
               <span style={{ color:'var(--text-muted)' }}>Next Billing:</span>
-              <span style={{ fontWeight:600, color:'var(--text-base)', fontFamily:'JetBrains Mono,monospace' }}>{getNextCycle()}</span>
+              <span className="text-[var(--text-base)]" style={{ fontWeight:700, fontFamily:'JetBrains Mono,monospace' }}>{getNextCycle()}</span>
             </div>
           )}
         </div>
@@ -155,8 +155,7 @@ export default function PaymentModal({ customer, onClose, onSuccess }) {
             <span style={S.label}>{t('paymentMethod') || 'Method'}</span>
             <select className="input w-full h-[46px]" value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value)} style={{ padding:'0 12px', appearance: 'auto', cursor: 'pointer' }}>
               <option value="Cash">Cash</option>
-              <option value="UPI">UPI</option>
-              <option value="Postdated Check">Check</option>
+              <option value="UPI/Online">UPI/Online</option>
             </select>
           </div>
         </div>

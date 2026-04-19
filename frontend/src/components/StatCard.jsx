@@ -11,7 +11,7 @@ export default function StatCard({ label, value, sub, accent, icon: Icon }) {
   return (
     <div className={`card p-5 border ${c.border} fade-up`}>
       <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-widest">{label}</p>
+        <p className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">{label}</p>
         {Icon && (
           <div className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center`}>
             <Icon className={`w-4 h-4 ${c.text}`} />
@@ -19,7 +19,7 @@ export default function StatCard({ label, value, sub, accent, icon: Icon }) {
         )}
       </div>
       <p className={`font-display text-2xl font-bold ${c.text}`}>{value}</p>
-      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
+      {sub && <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-1">{sub}</p>}
     </div>
   )
 }

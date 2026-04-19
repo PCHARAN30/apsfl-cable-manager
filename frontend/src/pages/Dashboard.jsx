@@ -89,7 +89,7 @@ export default function Dashboard() {
       <div className="fade-up flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:26, color:'var(--text-base)' }}>{t('dashboard')}</h1>
-          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:2 }}>
+          <p className="text-[var(--text-muted)] font-medium" style={{ fontSize:13, marginTop:2 }}>
             {new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
           </p>
         </div>
@@ -106,13 +106,13 @@ export default function Dashboard() {
         {topCards.map((c, i) => (
         <div key={i} className={`p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md fade-up stagger-${i+1}`} title={c.tooltip}>
             <div className="flex items-start justify-between mb-3">
-            <p style={{ fontSize:13, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)' }}>{c.label}</p>
+            <p className="text-slate-600 dark:text-slate-400" style={{ fontSize:13, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em' }}>{c.label}</p>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:`${c.color}18` }}>
                 <c.icon color={c.color} />
               </div>
             </div>
           <p className="count-up" style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:32, color:c.color, marginTop:8 }}>{c.value}</p>
-          <p style={{ fontSize:13, color:'var(--text-muted)', marginTop:6, fontWeight:500 }}>{c.sub}</p>
+          <p className="text-slate-600 dark:text-slate-400" style={{ fontSize:13, marginTop:6, fontWeight:500 }}>{c.sub}</p>
           </div>
         ))}
       </div>
@@ -121,9 +121,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-4">
         {bottomCards.map((c, i) => (
         <div key={i} className={`p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md fade-up stagger-${i+5}`}>
-          <p style={{ fontSize:13, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'var(--text-muted)', marginBottom:12 }}>{c.label}</p>
+          <p className="text-slate-600 dark:text-slate-400" style={{ fontSize:13, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12 }}>{c.label}</p>
           <p style={{ fontFamily:'Sora,sans-serif', fontWeight:800, fontSize:36, color:c.color }}>{c.value}</p>
-          <p style={{ fontSize:14, color:'var(--text-muted)', marginTop:4, fontWeight:500 }}>{c.sub}</p>
+          <p className="text-slate-600 dark:text-slate-400" style={{ fontSize:14, marginTop:4, fontWeight:500 }}>{c.sub}</p>
           </div>
         ))}
       </div>
@@ -145,12 +145,12 @@ export default function Dashboard() {
                 return (
                   <div key={c._id} className="bg-[var(--surface2)] border border-[var(--border-color)] rounded-lg" style={{ padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <div>
-                      <p style={{ fontSize:13, fontWeight:500, color:'var(--text-base)' }}>{c.name}</p>
-                      <p style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'JetBrains Mono,monospace' }}>{c.cafNumber}</p>
+                      <p className="font-semibold text-slate-900 dark:text-white" style={{ fontSize:13 }}>{c.name}</p>
+                      <p className="text-slate-600 dark:text-slate-400 font-medium" style={{ fontSize:11, fontFamily:'JetBrains Mono,monospace' }}>{c.cafNumber}</p>
                     </div>
                     <div style={{ textAlign:'right' }}>
                       <p style={{ fontSize:13, fontWeight:700, color:'#F59E0B', fontFamily:'JetBrains Mono,monospace' }}>{days}d</p>
-                      <p style={{ fontSize:10, color:'var(--text-muted)' }}>left</p>
+                      <p className="text-slate-600 dark:text-slate-400 font-medium" style={{ fontSize:10 }}>left</p>
                     </div>
                   </div>
                 )
