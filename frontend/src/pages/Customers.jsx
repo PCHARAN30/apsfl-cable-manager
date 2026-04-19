@@ -146,31 +146,23 @@ export default function Customers() {
   return (
     <div className="page !mt-0 !pt-0">
       {/* Top Section (Sticky Container) */}
-      <div className="bg-[var(--bg-base)] pb-0 -mt-3 pt-0 -mx-3 px-3 md:sticky md:top-0 md:z-40 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8">
-
-        {/* Mobile Search Backdrop */}
-        {showSearch && (
-          <div 
-            className="fixed inset-0 z-[45] bg-slate-900/40 backdrop-blur-sm md:hidden transition-opacity"
-            onClick={() => { setShowSearch(false); setSearch(''); }}
-          />
-        )}
+      <div className="sticky top-0 z-40 bg-[var(--bg-base)] pb-3 -mt-3 pt-0 -mx-3 px-3 md:pb-4 md:-mt-8 md:pt-8 md:-mx-8 md:px-8 border-b border-[var(--border-color)] md:border-none shadow-sm md:shadow-none mb-3 md:mb-0">
 
         {/* Mobile Search & Chips Block */}
         <div className="md:hidden -mx-3 mb-2 flex flex-col bg-[#075E54] dark:bg-slate-800 shadow-sm transition-colors relative z-50">
           
           {/* Inline Expandable Search */}
           {showSearch && (
-            <div className="px-3 pt-3 pb-1 flex items-center gap-2 fade-in">
-              <div className="relative flex-1">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-100/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input autoFocus className="w-full bg-black/15 dark:bg-black/20 border border-transparent text-white placeholder-emerald-100/70 text-[13px] rounded-md focus:bg-black/25 focus:border-emerald-400/30 outline-none transition-all py-2 pr-3 pl-9 shadow-inner" placeholder="Search by name, CAF, phone..." value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
-              </div>
-              <button onClick={() => {setShowSearch(false); setSearch('');}} className="text-emerald-50 p-1 hover:text-white">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            <div className="px-2 pt-2 pb-1 flex items-center gap-1 slide-down bg-[#075E54] dark:bg-slate-800">
+              <button onClick={() => {setShowSearch(false); setSearch('');}} className="p-2 text-white hover:bg-white/10 rounded-full transition-colors">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
               </button>
+              <input autoFocus className="flex-1 bg-transparent border-none text-white placeholder-emerald-100/70 text-[15px] focus:ring-0 outline-none py-2 px-1" placeholder="Search customers..." value={search} onChange={e=>{setSearch(e.target.value); setPage(1)}} />
+              {search && (
+                <button onClick={() => setSearch('')} className="p-2 text-white hover:bg-white/10 rounded-full transition-colors">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              )}
             </div>
           )}
           
@@ -469,24 +461,28 @@ export default function Customers() {
       )}
 
       {/* Floating Search Button (Mobile) */}
-      <button
-        onClick={() => setShowSearch(true)}
-        className="md:hidden fixed bottom-[140px] right-4 z-40 w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl shadow-lg shadow-black/10 flex items-center justify-center active:scale-90 transition-all"
-      >
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </button>
+      {!showSearch && (
+        <button
+          onClick={() => setShowSearch(true)}
+          className="md:hidden fixed bottom-[140px] right-4 z-40 w-12 h-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 rounded-xl shadow-lg shadow-black/10 flex items-center justify-center active:scale-90 transition-all"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+      )}
 
       {/* Floating Action Button (Mobile) */}
-      <button
-        onClick={() => setAddModal(true)}
-        className="md:hidden fixed bottom-[80px] right-4 z-40 w-12 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-xl shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
-      >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
+      {!showSearch && (
+        <button
+          onClick={() => setAddModal(true)}
+          className="md:hidden fixed bottom-[80px] right-4 z-40 w-12 h-12 bg-[#25D366] hover:bg-[#128C7E] text-white rounded-xl shadow-lg shadow-green-500/40 flex items-center justify-center active:scale-90 transition-all"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
 
       {payModal && <PaymentModal customer={payModal} onClose={()=>setPayModal(null)} onSuccess={load}/>}
       {addModal && <AddCustomerModal onClose={()=>setAddModal(false)} onSuccess={() => { load(); loadPonStats(); }} ponStats={ponStats}/>}
