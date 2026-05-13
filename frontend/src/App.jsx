@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { Analytics } from '@vercel/analytics/react'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import Payments from './pages/Payments'
@@ -144,7 +145,12 @@ export default function App() {
 
   // 1. If PIN is set but app is locked
   if (hasPin && !isUnlocked) {
-    return <PinLockScreen onUnlock={handleUnlock} />
+    return (
+      <>
+        <PinLockScreen onUnlock={handleUnlock} />
+        <Analytics />
+      </>
+    )
   }
 
   // 2. If NO PIN is set, and user hasn't clicked "Tap to Enter"
@@ -168,6 +174,7 @@ export default function App() {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
           </button>
         </div>
+        <Analytics />
       </div>
     )
   }
@@ -191,6 +198,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
+      <Analytics />
     </div>
   )
 }
