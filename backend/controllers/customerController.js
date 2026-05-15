@@ -64,9 +64,23 @@ exports.getCustomers = async (req, res) => {
   try {
     const { search, status, pon, page = 1, limit = 100 } = req.query;
     const query = {};
+    const now = new Date();
 
     if (status && ["PAID", "UNPAID", "PARTIAL"].includes(status.toUpperCase())) {
-      query.status = status.toUpperCase();
+      const s = status.toUpperCase();
+      if (s === "UNPAID") {
+        query.$or = [
+          { status: "UNPAID" },
+          { validTill: { $lt: now } },
+          { validTill: null }
+        ];
+      } else if (s === "PAID") {
+        query.validTill = { $gte: now };
+        query.$or = [{ carryOver: 0 }, { carryOver: null }];
+      } else if (s === "PARTIAL") {
+        query.validTill = { $gte: now };
+        query.carryOver = { $gt: 0 };
+      }
     }
 
     if (pon) {
@@ -75,7 +89,13 @@ exports.getCustomers = async (req, res) => {
 
     if (search) {
       const re = new RegExp(search, "i");
-      query.$or = [{ name: re }, { cafNumber: re }, { phone: re }];
+      const searchOr = [{ name: re }, { cafNumber: re }, { phone: re }];
+      if (query.$or) { // Prevent overwriting the status $or
+        query.$and = [{ $or: query.$or }, { $or: searchOr }];
+        delete query.$or;
+      } else {
+        query.$or = searchOr;
+      }
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -84,7 +104,20 @@ exports.getCustomers = async (req, res) => {
       Customer.countDocuments(query),
     ]);
 
-    res.json({ success: true, total, page: parseInt(page), data: customers });
+    // Compute dynamic status on the fly so it's instantly accurate
+    const dynamicCustomers = customers.map(c => {
+      let computedStatus = c.status;
+      if (!c.validTill || new Date(c.validTill) < now) {
+        computedStatus = "UNPAID";
+      } else if (c.carryOver > 0) {
+        computedStatus = "PARTIAL";
+      } else {
+        computedStatus = "PAID";
+      }
+      return { ...c, status: computedStatus };
+    });
+
+    res.json({ success: true, total, page: parseInt(page), data: dynamicCustomers });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -95,6 +128,18 @@ exports.getCustomerById = async (req, res) => {
   try {
     const customer = await Customer.findById(req.params.id).lean();
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
+
+    const now = new Date();
+    let computedStatus = customer.status;
+    if (!customer.validTill || new Date(customer.validTill) < now) {
+      computedStatus = "UNPAID";
+    } else if (customer.carryOver > 0) {
+      computedStatus = "PARTIAL";
+    } else {
+      computedStatus = "PAID";
+    }
+    customer.status = computedStatus;
+
     res.json({ success: true, data: customer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

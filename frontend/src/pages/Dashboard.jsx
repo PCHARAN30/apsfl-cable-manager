@@ -3,6 +3,7 @@ import { getDashboardStats, getExpiringCustomers, resetDashboard } from '../serv
 import { useLang } from '../context/LanguageContext'
 import toast from 'react-hot-toast'
 import PonDashboard from '../components/PonDashboard'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : '—'
 
@@ -21,14 +22,15 @@ export default function Dashboard() {
         getDashboardStats(), getExpiringCustomers(7)
       ])
       
-      let baseStats = s.data.data;
+      let baseStats = s.data?.data || {};
       
       // Optimistic offline adjustments
-      const queue = JSON.parse(localStorage.getItem('offline_payments') || '[]');
-      if (queue.length > 0) {
+      const storedQueue = JSON.parse(localStorage.getItem('offline_payments') || '[]');
+      const queue = Array.isArray(storedQueue) ? storedQueue : [];
+      if (queue?.length > 0) {
         let offlineRevenue = 0;
         queue.forEach(item => {
-          offlineRevenue += Number(item.payload.amountPaid || 0);
+          offlineRevenue += Number(item.payload?.amountPaid || 0);
         });
         baseStats = {
           ...baseStats,
@@ -39,7 +41,7 @@ export default function Dashboard() {
       }
       
       setStats(baseStats)
-      setExpiring(e.data.data)
+      setExpiring(Array.isArray(e.data?.data) ? e.data.data : [])
     } catch (error) { 
       console.error("Failed to load dashboard data:", error)
     }
@@ -136,7 +138,7 @@ export default function Dashboard() {
             <span className="pulse-dot" />
             <p style={{ fontWeight:600, color:'var(--text-base)', fontSize:14 }}>{t('expiringIn7Days')}</p>
           </div>
-          {expiring.length === 0 ? (
+          {(Array.isArray(expiring) ? expiring.length : 0) === 0 ? (
             <p style={{ fontSize:14, color:'var(--text-muted)', textAlign:'center', padding:'32px 0' }}>{t('allGood')}</p>
           ) : (
             <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:200, overflowY:'auto' }}>
@@ -188,7 +190,9 @@ export default function Dashboard() {
 
       {/* PON Dashboard */}
       <div className="mt-4 fade-up stagger-8">
-        <PonDashboard />
+        <ErrorBoundary>
+          <PonDashboard />
+        </ErrorBoundary>
       </div>
     </div>
   )

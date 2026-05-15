@@ -60,6 +60,12 @@ export default function EditCustomerModal({ customer, onClose, onSuccess, ponSta
       payload.notes = trimmedNotes ? `${trimmedNotes}\n${systemLogs.join('\n')}` : systemLogs.join('\n');
     }
 
+    if (!payload.connectionDate) payload.connectionDate = null;
+    if (!payload.billingStartDate) payload.billingStartDate = null;
+
+    const selectedPlan = plans.find(p => p.name === payload.planName);
+    if (selectedPlan) payload.planAmount = selectedPlan.amount;
+
     try { 
       await updateCustomer(customer._id, payload); 
       toast.success('Customer updated!'); 

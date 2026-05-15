@@ -27,9 +27,9 @@ export default function Payments() {
       if (to)   params.to   = to
       if (method) params.method = method
       const res = await getAllPayments(params)
-      setPayments(res.data.data)
-      setTotal(res.data.total)
-      setTotalAmt(res.data.totalAmount)
+      setPayments(Array.isArray(res.data?.data) ? res.data.data : [])
+      setTotal(res.data?.total || 0)
+      setTotalAmt(res.data?.totalAmount || 0)
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }
   }

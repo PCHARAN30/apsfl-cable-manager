@@ -7,7 +7,7 @@ export default function PonDashboard() {
 
   useEffect(() => {
     getPonStats()
-      .then(res => setStats(res.data.data))
+      .then(res => setStats(Array.isArray(res.data?.data) ? res.data.data : []))
       .catch(err => console.error('Failed to load PON stats', err))
       .finally(() => setLoading(false))
   }, [])
@@ -37,7 +37,7 @@ export default function PonDashboard() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-color)] text-sm">
-            {stats.filter(s => s.ponNumber != null && String(s.ponNumber).trim() !== '').map(s => {
+            {(stats || []).filter(s => s.ponNumber != null && String(s.ponNumber).trim() !== '').map(s => {
               const used = s.used;
               const available = s.available;
               const isFull = used >= 128;
@@ -65,7 +65,7 @@ export default function PonDashboard() {
                 </tr>
               )
             })}
-            {stats.length === 0 && (
+            {(stats || []).length === 0 && (
               <tr>
                 <td colSpan="4" className="p-8 text-center text-slate-500">No PON connections recorded yet.</td>
               </tr>

@@ -5,7 +5,7 @@ const api = axios.create({
   // For local development, create a .env file in the `frontend` directory and set:
   // VITE_API_URL=/api
   // This uses the Vite proxy. For production, the build pipeline (e.g., Vercel) will set this to the live backend URL.
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
   withCredentials: true,
 })
@@ -17,10 +17,34 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Add response interceptor to auto-logout on invalid sessions
+// Add response interceptor to cache GET requests for offline support
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Cache successful GET responses
+    if (response.config.method === 'get') {
+      try {
+        const queryStr = new URLSearchParams(response.config.params || {}).toString();
+        const cacheKey = `cache_${response.config.url}?${queryStr}`;
+        localStorage.setItem(cacheKey, JSON.stringify(response.data));
+      } catch (e) {
+        // Ignore local storage quota errors safely
+      }
+    }
+    return response;
+  },
   (error) => {
+    // Return cached data if offline or network fails
+    if ((!navigator.onLine || error.code === 'ERR_NETWORK') && error.config && error.config.method === 'get') {
+      try {
+        const queryStr = new URLSearchParams(error.config.params || {}).toString();
+        const cacheKey = `cache_${error.config.url}?${queryStr}`;
+        const cachedData = localStorage.getItem(cacheKey);
+        if (cachedData) {
+          // Simulate a successful Axios response using the cached data
+          return Promise.resolve({ data: JSON.parse(cachedData), status: 200, statusText: 'OK', config: error.config, headers: {} });
+        }
+      } catch (e) {}
+    }
     return Promise.reject(error)
   }
 )

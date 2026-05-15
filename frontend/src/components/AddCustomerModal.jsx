@@ -30,7 +30,14 @@ export default function AddCustomerModal({ onClose, onSuccess, ponStats }) {
       return;
     }
     setLoading(true)
-    try { await createCustomer(form); toast.success('Customer added!'); onSuccess(); onClose() }
+
+    const payload = { ...form };
+    if (!payload.connectionDate) payload.connectionDate = null;
+    
+    const selectedPlan = plans.find(p => p.name === payload.planName);
+    if (selectedPlan) payload.planAmount = selectedPlan.amount;
+
+    try { await createCustomer(payload); toast.success('Customer added!'); onSuccess(); onClose() }
     catch (err) { toast.error(err.response?.data?.message || 'Failed') }
     finally { setLoading(false) }
   }

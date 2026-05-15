@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react'
 
-// A simple, non-crypto hash for obfuscation. Must match the one in ProfileModal.
-const hashPin = (pin) => btoa(pin + 'cablesync-salt');
+// Legacy hash for backwards compatibility
+const oldHashPin = (pin) => btoa(pin + 'cablesync-salt');
+
+// Secure cryptographic hash using Web Crypto API
+const hashPin = async (pin) => {
+  const msgUint8 = new TextEncoder().encode(pin + 'cablesync-salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
 
 export default function PinLockScreen({ onUnlock }) {
   const [password, setPassword] = useState('')
@@ -11,12 +19,25 @@ export default function PinLockScreen({ onUnlock }) {
   const [showRecovery, setShowRecovery] = useState(false)
   const [recoveryKey, setRecoveryKey] = useState('')
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const storedHash = localStorage.getItem('app_pin_hash');
+    const inputPin = password.toLowerCase().trim();
     
-    // Check password case-insensitively
-    if (hashPin(password.toLowerCase().trim()) === storedHash) {
+    let isMatch = false;
+    
+    // Backwards compatibility check for older basic hashes
+    if (storedHash && storedHash.length < 64) {
+      if (oldHashPin(inputPin) === storedHash) {
+        isMatch = true;
+        // Auto-migrate to secure hash
+        localStorage.setItem('app_pin_hash', await hashPin(inputPin));
+      }
+    } else {
+      isMatch = (await hashPin(inputPin)) === storedHash;
+    }
+
+    if (isMatch) {
       onUnlock(rememberMe);
     } else {
       setError(true);

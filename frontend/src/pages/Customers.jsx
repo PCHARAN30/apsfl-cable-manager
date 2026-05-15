@@ -45,7 +45,8 @@ export default function Customers() {
   const loadPonStats = () => {
     getPonStats()
       .then(res => {
-        const data = res.data.data.filter(s => s.ponNumber != null && String(s.ponNumber).trim() !== '');
+        const rawData = Array.isArray(res.data?.data) ? res.data.data : [];
+        const data = rawData.filter(s => s.ponNumber != null && String(s.ponNumber).trim() !== '');
         setAvailablePons(data.map(s => String(s.ponNumber)));
         setPonStats(new Map(data.map(s => [String(s.ponNumber), s.used])));
       })
@@ -63,8 +64,8 @@ export default function Customers() {
       if (statusFilter !== 'ALL') params.status = statusFilter
       if (ponFilter) params.pon = ponFilter
       const res = await getCustomers(params)
-      setCustomers(res.data.data)
-      setTotal(res.data.total)
+      setCustomers(Array.isArray(res.data?.data) ? res.data.data : [])
+      setTotal(res.data?.total || 0)
       setSelectedIds([]) // Clear selection on page/filter change
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }

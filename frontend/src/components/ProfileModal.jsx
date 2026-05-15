@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 
-// A simple, non-crypto hash for obfuscation. Must match PinLockScreen.
-const hashPin = (pin) => btoa(pin + 'cablesync-salt');
+// Secure cryptographic hash using Web Crypto API. Must match PinLockScreen.
+const hashPin = async (pin) => {
+  const msgUint8 = new TextEncoder().encode(pin + 'cablesync-salt');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
 
 export default function ProfileModal({ onClose, onSuccess }) {
   const [appPassword, setAppPassword] = useState('')
@@ -17,7 +22,8 @@ export default function ProfileModal({ onClose, onSuccess }) {
     }
 
       if (appPassword) {
-        localStorage.setItem('app_pin_hash', hashPin(appPassword.toLowerCase().trim()));
+        const hashed = await hashPin(appPassword.toLowerCase().trim());
+        localStorage.setItem('app_pin_hash', hashed);
         
         // Force auto-lock once to verify the new password
         localStorage.removeItem('app_remember_me');
