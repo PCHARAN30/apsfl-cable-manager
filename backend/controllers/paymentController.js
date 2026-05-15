@@ -125,18 +125,33 @@ exports.markPayment = async (req, res) => {
 /** POST /api/payments/unpaid/:customerId — manually mark as unpaid */
 exports.markUnpaid = async (req, res) => {
   try {
-    const customer = await Customer.findByIdAndUpdate(
-      req.params.customerId,
-      {
-        status: "UNPAID",
-        partialAmountPaid: 0,
-        carryOver: 0,
-      },
-      { new: true }
-    ).lean();
+    const customerId = req.params.customerId;
+
+    // 1. Find the most recent payment for this customer
+    const lastPayment = await Payment.findOne({ customer: customerId }).sort({ paymentDate: -1 });
+
+    let previousValidTill = null;
+
+    if (lastPayment) {
+      previousValidTill = lastPayment.validFrom;
+      // Delete the last payment record so it doesn't falsely show up in history as paid
+      await Payment.findByIdAndDelete(lastPayment._id);
+    }
+
+    // Find the *new* last payment to update the customer's lastPaymentDate
+    const newLastPayment = await Payment.findOne({ customer: customerId }).sort({ paymentDate: -1 });
+
+    // 2. Update the customer to the previous statement date and clear balances
+    const customer = await Customer.findByIdAndUpdate(customerId, {
+      validTill: previousValidTill,
+      lastPaymentDate: newLastPayment ? newLastPayment.paymentDate : null,
+      status: "UNPAID",
+      carryOver: 0,
+      partialAmountPaid: 0
+    }, { new: true }).lean();
 
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
-    res.json({ success: true, data: customer });
+    res.json({ success: true, message: "Reverted to previous unpaid statement date", data: customer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

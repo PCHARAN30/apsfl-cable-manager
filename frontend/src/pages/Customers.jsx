@@ -74,8 +74,9 @@ export default function Customers() {
   useEffect(() => { load() }, [load])
 
   const handleMarkUnpaid = async (c) => {
-    try { await markUnpaid(c._id); toast.success('Marked UNPAID'); load() }
-    catch { toast.error('Failed') }
+    if (!window.confirm(`Are you sure you want to mark ${c.name} as UNPAID?\n\nThis will revert their validity back to their previous unpaid date.`)) return;
+    try { await markUnpaid(c._id); toast.success('Reverted to previous state'); load(); }
+    catch (err) { toast.error(err.response?.data?.message || 'Failed to revert') }
   }
 
   const handleDelete = async (c) => {
