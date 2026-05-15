@@ -105,7 +105,7 @@ export default function Payments() {
                   {t('noPaymentRecords')}
                 </td></tr>
               ) : payments.map((p,i)=>(
-                <tr key={p._id} className="tbl-row">
+              <tr key={p._id} className={`tbl-row border-l-4 ${p.paymentType === 'PARTIAL' ? 'bg-amber-500/10 border-amber-500' : 'bg-emerald-500/10 border-emerald-500'}`}>
                   <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + i + 1}</td>
                   <td className="tbl-cell font-semibold text-slate-900 dark:text-white">{p.customerName}</td>
                   <td className="tbl-cell text-slate-600 dark:text-slate-400" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{p.cafNumber}</td>
@@ -153,7 +153,7 @@ export default function Payments() {
         ) : payments.map((p) => {
           const isPartial = p.paymentType === 'PARTIAL';
           return (
-            <div key={p._id} className={`relative p-4 rounded-xl border shadow-sm border-l-4 ${isPartial ? 'border-l-amber-500 bg-[var(--bg-surface)] border-[var(--border-color)]' : 'border-l-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)]'}`}>
+            <div key={p._id} className={`relative p-4 rounded-xl border shadow-sm border-l-4 ${isPartial ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20' : 'border-l-emerald-500 bg-emerald-500/10 border-emerald-500/20'}`}>
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">{p.customerName}</h3>

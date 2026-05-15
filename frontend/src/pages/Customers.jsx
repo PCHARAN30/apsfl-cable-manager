@@ -224,7 +224,7 @@ export default function Customers() {
                 const isExpired = (c.status === 'UNPAID' && c.validTill !== null) || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
                 
                 return (
-                  <tr key={c._id} className={`tbl-row border-l-4 ${isExpired ? 'bg-red-500/10 border-red-500' : expiring ? 'bg-amber-500/10 border-amber-500' : 'border-transparent'}`}>
+                  <tr key={c._id} className={`tbl-row border-l-4 ${c.status === 'PAID' ? 'bg-emerald-500/10 border-emerald-500' : c.status === 'PARTIAL' ? 'bg-amber-500/10 border-amber-500' : 'bg-red-500/10 border-red-500'}`}>
                     <td className="tbl-cell" style={{ textAlign: 'center' }}>
                       <input 
                         type="checkbox"
@@ -301,7 +301,7 @@ export default function Customers() {
           const isExpired = (c.status === 'UNPAID' && c.validTill !== null) || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
           
           return (
-            <div key={c._id} className={`relative p-3 rounded-xl border shadow-sm border-l-4 ${isExpired ? 'border-l-red-500 bg-red-500/10 border-red-500/20' : expiring ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20' : 'border-l-emerald-500 bg-[var(--bg-surface)] border-[var(--border-color)]'}`}>
+            <div key={c._id} className={`relative p-3 rounded-xl border shadow-sm border-l-4 ${c.status === 'PAID' ? 'border-l-emerald-500 bg-emerald-500/10 border-emerald-500/20' : c.status === 'PARTIAL' ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20' : 'border-l-red-500 bg-red-500/10 border-red-500/20'}`}>
               {/* Top: Name & Checkbox */}
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-start gap-3">

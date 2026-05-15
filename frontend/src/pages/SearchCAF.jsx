@@ -167,7 +167,7 @@ export default function SearchCAF() {
         ) : query && results.length === 0 ? (
           <div className="col-span-full text-center py-12 text-slate-500 bg-[var(--surface2)] border border-[var(--border-color)] rounded-2xl">No customers found matching "{query}"</div>
         ) : results.map(c => (
-          <div key={c._id} onClick={() => { setViewModal(c); saveRecentSearch(query); }} className="flex flex-col bg-[var(--glass-bg)] border border-[var(--border-color)] p-5 rounded-2xl hover:border-emerald-500/40 hover:bg-emerald-500/5 transition-all cursor-pointer shadow-sm group">
+          <div key={c._id} onClick={() => { setViewModal(c); saveRecentSearch(query); }} className={`flex flex-col p-5 rounded-2xl transition-all cursor-pointer shadow-sm group border-l-4 ${c.status === 'PAID' ? 'border-l-emerald-500 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20' : c.status === 'PARTIAL' ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20' : 'border-l-red-500 bg-red-500/10 border-red-500/20 hover:bg-red-500/20'}`}>
             <div className="flex justify-between items-start mb-2">
               <h3 className="font-bold text-[var(--text-base)] text-lg group-hover:text-emerald-400 transition-colors">{c.name}</h3>
               <StatusBadge status={c.status} />
