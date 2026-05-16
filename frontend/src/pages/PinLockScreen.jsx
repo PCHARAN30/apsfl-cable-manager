@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 // Legacy hash for backwards compatibility
 const oldHashPin = (pin) => btoa(pin + 'cablesync-salt');

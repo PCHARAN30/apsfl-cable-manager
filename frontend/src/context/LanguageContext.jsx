@@ -44,7 +44,8 @@ const en = {
     // Customers
     addCustomer: 'New Customer',
     totalRecords: 'total',
-    searchPlaceholder: 'Search name, CAF or phone...',
+    searchPlaceholder: 'Search name, CAF, phone or S.No...',
+    serialNumber: 'S.No',
     name: 'Name',
     cafNumber: 'CAF/ID',
     phone: 'Phone',

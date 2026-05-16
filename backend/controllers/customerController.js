@@ -4,7 +4,6 @@ const csv = require("csv-parser");
 const XLSX = require("xlsx");
 const Customer = require("../models/Customer");
 const Payment = require("../models/Payment");
-const { calcValidTill } = require("../utils/dateUtils");
 const Settings = require("../models/Settings");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -90,6 +89,9 @@ exports.getCustomers = async (req, res) => {
     if (search) {
       const re = new RegExp(search, "i");
       const searchOr = [{ name: re }, { cafNumber: re }, { phone: re }];
+      if (!isNaN(search) && search.trim() !== '') {
+        searchOr.push({ serialNumber: Number(search) });
+      }
       if (query.$or) { // Prevent overwriting the status $or
         query.$and = [{ $or: query.$or }, { $or: searchOr }];
         delete query.$or;
@@ -105,16 +107,33 @@ exports.getCustomers = async (req, res) => {
     ]);
 
     // Compute dynamic status on the fly so it's instantly accurate
-    const dynamicCustomers = customers.map(c => {
+    const todayNormalized = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dynamicCustomers = customers.map((c, index) => {
       let computedStatus = c.status;
+      let extraNote = "";
+      let cleanNotes = (c.notes || "").split('\n').filter(line => !line.trim().match(/^\[System: Expired \d+ days? ago\]$/i)).join('\n');
+
       if (!c.validTill || new Date(c.validTill) < now) {
         computedStatus = "UNPAID";
+        if (c.validTill) {
+          const validTillNormalized = new Date(new Date(c.validTill).getFullYear(), new Date(c.validTill).getMonth(), new Date(c.validTill).getDate());
+          const daysExpired = Math.floor((todayNormalized - validTillNormalized) / 86400000);
+          if (daysExpired > 0) {
+            extraNote = `[System: Expired ${daysExpired} day${daysExpired > 1 ? 's' : ''} ago]`;
+          }
+        }
       } else if (c.carryOver > 0) {
         computedStatus = "PARTIAL";
       } else {
         computedStatus = "PAID";
       }
-      return { ...c, status: computedStatus };
+      
+      let finalNotes = cleanNotes;
+      if (extraNote) {
+        finalNotes = finalNotes ? `${finalNotes}\n${extraNote}` : extraNote;
+      }
+
+      return { ...c, status: computedStatus, serialNumber: c.serialNumber || (skip + index + 1), notes: finalNotes };
     });
 
     res.json({ success: true, total, page: parseInt(page), data: dynamicCustomers });
@@ -130,15 +149,32 @@ exports.getCustomerById = async (req, res) => {
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
 
     const now = new Date();
+    const todayNormalized = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let computedStatus = customer.status;
+    let extraNote = "";
+    let cleanNotes = (customer.notes || "").split('\n').filter(line => !line.trim().match(/^\[System: Expired \d+ days? ago\]$/i)).join('\n');
+
     if (!customer.validTill || new Date(customer.validTill) < now) {
       computedStatus = "UNPAID";
+      if (customer.validTill) {
+        const validTillNormalized = new Date(new Date(customer.validTill).getFullYear(), new Date(customer.validTill).getMonth(), new Date(customer.validTill).getDate());
+        const daysExpired = Math.floor((todayNormalized - validTillNormalized) / 86400000);
+        if (daysExpired > 0) {
+          extraNote = `[System: Expired ${daysExpired} day${daysExpired > 1 ? 's' : ''} ago]`;
+        }
+      }
     } else if (customer.carryOver > 0) {
       computedStatus = "PARTIAL";
     } else {
       computedStatus = "PAID";
     }
     customer.status = computedStatus;
+
+    let finalNotes = cleanNotes;
+    if (extraNote) {
+      finalNotes = finalNotes ? `${finalNotes}\n${extraNote}` : extraNote;
+    }
+    customer.notes = finalNotes;
 
     res.json({ success: true, data: customer });
   } catch (err) {
@@ -189,7 +225,10 @@ exports.createCustomer = async (req, res) => {
       ? { name: customPlan.name, price: customPlan.amount } 
       : { name: defaultPlan.name, price: defaultPlan.amount };
 
-    const customer = await Customer.create({ name, phone, address, area, cafNumber, planName: selectedPackage.name, planAmount: selectedPackage.price, packageDetails: selectedPackage, notes, connectionDate, ponNumber });
+    const maxCust = await Customer.findOne().sort({ serialNumber: -1 }).select("serialNumber").lean();
+    const nextSerial = (maxCust?.serialNumber || 0) + 1;
+
+    const customer = await Customer.create({ name, phone, address, area, cafNumber, planName: selectedPackage.name, planAmount: selectedPackage.price, packageDetails: selectedPackage, notes, connectionDate, ponNumber, serialNumber: nextSerial });
     res.status(201).json({ success: true, data: customer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -260,13 +299,13 @@ exports.updateCustomer = async (req, res) => {
       const operatorName = settingsObj?.companyName || 'Operator';
 
       const now = new Date();
-      const dateStr = now.toLocaleDateString("en-IN");
-      const timeStr = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+      const dateStr = now.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+      const timeStr = now.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
       const autoNote = `[System: ${changedFields.join(', ')} updated on ${dateStr} at ${timeStr} (${operatorName})]`;
       
       // Safely append to frontend notes or existing db notes
       const baseNotes = updates.notes !== undefined ? String(updates.notes) : String(existingCustomer.notes || '');
-      const lines = baseNotes.split('\n');
+      const lines = baseNotes.split('\n').filter(line => !line.trim().match(/^\[System: Expired \d+ days? ago\]$/i));
       const userNotes = lines.filter(line => !line.trim().startsWith('[System:'));
       const systemLogs = lines.filter(line => line.trim().startsWith('[System:'));
       
@@ -341,6 +380,9 @@ exports.importCustomers = async (req, res) => {
     const settings = await Settings.findOne();
     const dynamicPlans = settings?.plans || [];
 
+    const maxCust = await Customer.findOne().sort({ serialNumber: -1 }).select("serialNumber").lean();
+    let nextSerial = (maxCust?.serialNumber || 0) + 1;
+
     for (const row of rows) {
       let { name, phone, address, area, cafNumber, connectionDate, ponNumber, planName } = normaliseRow(row);
       ponNumber = normalizePon(ponNumber);
@@ -369,6 +411,7 @@ exports.importCustomers = async (req, res) => {
           { $setOnInsert: { 
             name, phone, address, area, cafNumber: cafNumber.toUpperCase(),
             planName: selectedPackage.name, planAmount: selectedPackage.price, packageDetails: selectedPackage,
+            serialNumber: nextSerial,
             ...(connectionDate && { connectionDate }),
             ...(ponNumber && { ponNumber })
           } },
@@ -376,6 +419,7 @@ exports.importCustomers = async (req, res) => {
         );
         
         if (result.upsertedCount > 0) {
+          nextSerial++;
           imported++;
         } else {
           skipped++;
@@ -416,6 +460,26 @@ exports.bulkDeleteCustomers = async (req, res) => {
     await Customer.deleteMany({ _id: { $in: ids } });
     
     res.json({ success: true, message: "Customers and associated payments deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+/** POST /api/customers/reset-serials  — Re-sequence serial numbers */
+exports.resetSerials = async (req, res) => {
+  try {
+    const customers = await Customer.find().sort({ createdAt: 1 });
+    let nextSerial = 1;
+    const bulkOps = customers.map((c) => ({
+      updateOne: {
+        filter: { _id: c._id },
+        update: { $set: { serialNumber: nextSerial++ } }
+      }
+    }));
+    if (bulkOps.length > 0) {
+      await Customer.bulkWrite(bulkOps);
+    }
+    res.json({ success: true, message: "Serial numbers reset successfully." });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

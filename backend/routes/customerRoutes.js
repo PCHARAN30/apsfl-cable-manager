@@ -11,11 +11,13 @@ const {
   bulkDeleteCustomers,
   getPonStats,
   importCustomers,
+  resetSerials,
 } = require("../controllers/customerController");
 
 // ⚠️ SPECIFIC routes MUST come before /:id wildcard
 router.get('/pon-stats', getPonStats);
 router.post('/bulk-delete', bulkDeleteCustomers);
+router.post('/reset-serials', resetSerials);
 router.post('/import', upload.single('file'), importCustomers);
 
 // General CRUD

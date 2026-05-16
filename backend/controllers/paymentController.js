@@ -22,6 +22,8 @@ exports.markPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: "amountPaid must be > 0" });
     }
 
+    const tempValidTill = customer.validTill; // Store current Valid Till date in a temp variable
+
     const now = new Date();
     const SYSTEM_START_DATE = new Date("2026-01-01T00:00:00.000Z");
     const isOldCustomer = !customer.validTill || new Date(customer.validTill) < SYSTEM_START_DATE;
@@ -60,8 +62,8 @@ exports.markPayment = async (req, res) => {
       }
     }
 
-    const dateStr = now.toLocaleDateString("en-IN");
-    const timeStr = now.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
+    const dateStr = now.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+    const timeStr = now.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata", hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
     let generatedNote = `Paid via ${paymentMethod.toLowerCase()} on ${dateStr} at ${timeStr}`;
 
     // Base calculations
@@ -96,6 +98,7 @@ exports.markPayment = async (req, res) => {
 
     customer.lastPaymentDate = now;
     customer.notes = generatedNote;
+    customer.set('tempValidTill', tempValidTill, { strict: false }); // Storing it in case operator made a mistake
     await customer.save();
 
     const payment = await Payment.create({
@@ -110,6 +113,9 @@ exports.markPayment = async (req, res) => {
       validTill: customer.validTill || baseDate,
       notes: generatedNote,
     });
+    
+    // Store in payment document fallback (bypassing strict schema limits)
+    await Payment.collection.updateOne({ _id: payment._id }, { $set: { tempValidTill: tempValidTill } });
 
     res.json({
       success: true,
@@ -127,13 +133,21 @@ exports.markUnpaid = async (req, res) => {
   try {
     const customerId = req.params.customerId;
 
-    // 1. Find the most recent payment for this customer
-    const lastPayment = await Payment.findOne({ customer: customerId }).sort({ paymentDate: -1 });
-
+    // 1. Find the most recent payment for this customer (.lean() fetches the extra temp properties)
+    const lastPayment = await Payment.findOne({ customer: customerId }).sort({ paymentDate: -1 }).lean();
+    const currentCustomer = await Customer.findById(customerId).lean();
     let previousValidTill = null;
 
     if (lastPayment) {
-      previousValidTill = lastPayment.validFrom;
+      // Restore exactly from the stored temp variable
+      if (lastPayment.tempValidTill !== undefined) {
+        previousValidTill = lastPayment.tempValidTill;
+      } else if (currentCustomer && currentCustomer.tempValidTill !== undefined) {
+        previousValidTill = currentCustomer.tempValidTill;
+      } else {
+        previousValidTill = lastPayment.validFrom;
+      }
+      
       // Delete the last payment record so it doesn't falsely show up in history as paid
       await Payment.findByIdAndDelete(lastPayment._id);
     }
@@ -147,11 +161,15 @@ exports.markUnpaid = async (req, res) => {
       lastPaymentDate: newLastPayment ? newLastPayment.paymentDate : null,
       status: "UNPAID",
       carryOver: 0,
-      partialAmountPaid: 0
+      partialAmountPaid: 0,
+      $unset: { tempValidTill: 1 } // Clean up the temp variable
     }, { new: true }).lean();
 
     if (!customer) return res.status(404).json({ success: false, message: "Customer not found" });
-    res.json({ success: true, message: "Reverted to previous unpaid statement date", data: customer });
+    
+    // Display the stored Valid Till date back to the operator
+    const displayDate = previousValidTill ? new Date(previousValidTill).toLocaleDateString("en-IN") : "NA";
+    res.json({ success: true, message: `Reverted to unpaid. Valid Till restored to: ${displayDate}`, data: customer });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -234,6 +252,7 @@ exports.deletePayment = async (req, res) => {
 exports.getPaymentHistory = async (req, res) => {
   try {
     const payments = await Payment.find({ customer: req.params.customerId })
+      .populate('customer', 'serialNumber')
       .lean()
       .sort({ paymentDate: -1 });
     res.json({ success: true, data: payments });
@@ -245,7 +264,7 @@ exports.getPaymentHistory = async (req, res) => {
 /** GET /api/payments/all — all payments with optional date range */
 exports.getAllPayments = async (req, res) => {
   try {
-    const { from, to, method, page = 1, limit = 50 } = req.query;
+    const { from, to, method, search, page = 1, limit = 50 } = req.query;
     const query = {};
 
     if (from || to) {
@@ -262,9 +281,35 @@ exports.getAllPayments = async (req, res) => {
       query.notes = { $regex: new RegExp(`via ${method}`, 'i') };
     }
 
+    if (search) {
+      const re = new RegExp(search, 'i');
+      
+      // Lookup customers that might match the phone number (or current name/CAF)
+      const matchingCustomers = await Customer.find({
+        $or: [
+          { name: re },
+          { cafNumber: re },
+          { phone: re }
+        ]
+      }).select('_id');
+      const customerIds = matchingCustomers.map(c => c._id);
+
+      query.$or = [
+        { customerName: re },
+        { cafNumber: re },
+        { notes: re }
+      ];
+      if (customerIds.length > 0) {
+        query.$or.push({ customer: { $in: customerIds } });
+      }
+      if (!isNaN(search) && search.trim() !== '') {
+        query.$or.push({ amountPaid: Number(search) });
+      }
+    }
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const [payments, total, totalAmountAgg] = await Promise.all([
-      Payment.find(query).lean().sort({ paymentDate: -1 }).skip(skip).limit(parseInt(limit)),
+      Payment.find(query).populate('customer', 'serialNumber').lean().sort({ paymentDate: -1 }).skip(skip).limit(parseInt(limit)),
       Payment.countDocuments(query),
       Payment.aggregate([
         { $match: query },

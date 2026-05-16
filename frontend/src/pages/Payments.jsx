@@ -15,6 +15,7 @@ export default function Payments() {
   const [from, setFrom]         = useState('')
   const [to, setTo]             = useState('')
   const [method, setMethod]     = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [historyModal, setHistoryModal] = useState(null)
   const [page, setPage]         = useState(1)
   const limit = 50
@@ -26,6 +27,7 @@ export default function Payments() {
       if (from) params.from = from
       if (to)   params.to   = to
       if (method) params.method = method
+      if (searchQuery) params.search = searchQuery
       const res = await getAllPayments(params)
       setPayments(Array.isArray(res.data?.data) ? res.data.data : [])
       setTotal(res.data?.total || 0)
@@ -37,7 +39,7 @@ export default function Payments() {
   useEffect(() => {
     const t = setTimeout(load, 300)
     return () => clearTimeout(t)
-  }, [page, from, to, method])
+  }, [page, from, to, method, searchQuery])
 
   const handleDelete = async (p) => {
     if (!window.confirm(`Delete entire payment of ₹${p.amountPaid} for ${p.customerName}?\n\nThis will reverse their validity by ${p.planMonths} month(s).`)) return
@@ -63,14 +65,27 @@ export default function Payments() {
         </div>
 
         {/* Filters */}
-        <div className="fade-up stagger-1 mt-2 md:mt-4 flex flex-row gap-2 md:gap-3 items-end bg-[var(--surface2)] p-2 md:p-3 rounded-xl border border-[var(--border-color)]">
+      <div className="fade-up stagger-1 mt-2 md:mt-4 flex flex-wrap md:flex-nowrap gap-2 md:gap-3 items-end bg-[var(--surface2)] p-2 md:p-3 rounded-xl border border-[var(--border-color)]">
+        <div className="w-full md:flex-[1.5]">
+          <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">Search</label>
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Name, CAF, Phone, Amount..." 
+              className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg pl-8 pr-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" 
+              value={searchQuery} 
+              onChange={e => { setSearchQuery(e.target.value); setPage(1); }} 
+            />
+            <svg className="w-4 h-4 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          </div>
+        </div>
           <div className="flex-1">
             <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">{t('from')}</label>
-            <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>setFrom(e.target.value)}/>
+          <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={from} onChange={e=>{setFrom(e.target.value); setPage(1);}}/>
           </div>
           <div className="flex-1">
             <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">{t('to')}</label>
-            <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>setTo(e.target.value)}/>
+          <input type="date" className="w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-base)] text-xs md:text-sm rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/50" value={to} onChange={e=>{setTo(e.target.value); setPage(1);}}/>
           </div>
           <div className="flex-1">
             <label className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-1">Method</label>
@@ -107,7 +122,10 @@ export default function Payments() {
               ) : payments.map((p,i)=>(
               <tr key={p._id} className={`tbl-row border-l-4 ${p.paymentType === 'PARTIAL' ? 'bg-amber-500/10 border-amber-500' : 'bg-emerald-500/10 border-emerald-500'}`}>
                   <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + i + 1}</td>
-                  <td className="tbl-cell font-semibold text-slate-900 dark:text-white">{p.customerName}</td>
+                  <td className="tbl-cell font-semibold text-slate-900 dark:text-white">
+                    {p.customer?.serialNumber && <span className="text-emerald-600 dark:text-emerald-500 font-mono text-sm mr-1">#{p.customer.serialNumber}</span>}
+                    {p.customerName}
+                  </td>
                   <td className="tbl-cell text-slate-600 dark:text-slate-400" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{p.cafNumber}</td>
                   <td className="tbl-cell">
                     <span className={p.paymentType==='FULL'?'badge-paid':'badge-partial'}>{p.paymentType}</span>
@@ -123,7 +141,7 @@ export default function Payments() {
                   <td className="tbl-cell italic text-slate-500" style={{ fontSize:12 }}>{p.notes||'NA'}</td>
                   <td className="tbl-cell">
                     <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                      <button onClick={()=>setHistoryModal({ _id: p.customer, name: p.customerName, cafNumber: p.cafNumber })}
+                      <button onClick={()=>setHistoryModal({ _id: p.customer?._id || p.customer, name: p.customerName, cafNumber: p.cafNumber })}
                         className="px-2 py-1 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                       >
                         View
@@ -156,7 +174,10 @@ export default function Payments() {
             <div key={p._id} className={`relative p-4 rounded-xl border shadow-sm border-l-4 ${isPartial ? 'border-l-amber-500 bg-amber-500/10 border-amber-500/20' : 'border-l-emerald-500 bg-emerald-500/10 border-emerald-500/20'}`}>
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight">{p.customerName}</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white text-base leading-tight flex items-center gap-1.5">
+                    {p.customer?.serialNumber && <span className="text-emerald-600 dark:text-emerald-500 font-mono text-xs bg-emerald-500/10 px-1.5 py-0.5 rounded">#{p.customer.serialNumber}</span>}
+                    {p.customerName}
+                  </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400 font-mono mt-1">{p.cafNumber}</p>
                 </div>
                 <span className={isPartial ? 'badge-partial' : 'badge-paid'}>{p.paymentType}</span>
@@ -188,7 +209,7 @@ export default function Payments() {
               </div>
 
               <div className="pt-4 border-t border-[var(--border-color)] flex justify-end gap-2">
-                <button onClick={()=>setHistoryModal({ _id: p.customer, name: p.customerName, cafNumber: p.cafNumber })} className="flex items-center gap-2 p-2.5 rounded-lg text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs font-bold">
+                <button onClick={()=>setHistoryModal({ _id: p.customer?._id || p.customer, name: p.customerName, cafNumber: p.cafNumber })} className="flex items-center gap-2 p-2.5 rounded-lg text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs font-bold">
                   View History
                 </button>
                 <button onClick={()=>handleDelete(p)} className="flex items-center gap-2 p-2.5 rounded-lg text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors text-xs font-bold">

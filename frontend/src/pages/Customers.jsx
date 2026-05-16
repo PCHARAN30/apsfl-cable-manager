@@ -10,14 +10,31 @@ import EditCustomerModal from '../components/EditCustomerModal'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'}) : 'NA'
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, validTill, rightAlign = false }) => {
   const cls = { PAID:'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20', UNPAID:'bg-red-500/10 text-red-500 border border-red-500/20', PARTIAL:'bg-amber-500/10 text-amber-500 border border-amber-500/20' }
   const dot = { PAID:'#22C55E', UNPAID:'#EF4444', PARTIAL:'#F59E0B' }
+  
+  let expiredDays = 0;
+  if (status === 'UNPAID' && validTill) {
+    const today = new Date();
+    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const vt = new Date(validTill);
+    const validTillNormalized = new Date(vt.getFullYear(), vt.getMonth(), vt.getDate());
+    expiredDays = Math.floor((todayNormalized - validTillNormalized) / 86400000);
+  }
+
   return (
-    <span className={`px-2 py-1 text-xs font-bold rounded-md flex items-center gap-1.5 w-max ${cls[status]||cls.UNPAID}`}>
-      <span style={{ width:5, height:5, borderRadius:'50%', background:dot[status], display:'inline-block' }}/>
-      {status}
-    </span>
+    <div className={`flex flex-col gap-1.5 ${rightAlign ? 'items-end' : 'items-start'}`}>
+      <span className={`px-2 py-1 text-xs font-bold rounded-md flex items-center gap-1.5 w-max ${cls[status]||cls.UNPAID}`}>
+        <span style={{ width:5, height:5, borderRadius:'50%', background:dot[status], display:'inline-block' }}/>
+        {status}
+      </span>
+      {expiredDays > 0 && (
+        <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded tracking-tight whitespace-nowrap">
+          Expired {expiredDays} day{expiredDays > 1 ? 's' : ''}
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -41,6 +58,7 @@ export default function Customers() {
 
   const [selectedIds, setSelectedIds] = useState([])
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteMode, setDeleteMode] = useState(false)
 
   const loadPonStats = () => {
     getPonStats()
@@ -55,6 +73,13 @@ export default function Customers() {
 
   useEffect(() => {
     loadPonStats()
+    
+    const handleToggle = () => setDeleteMode(prev => {
+      if (prev) setSelectedIds([]); // Clear selection when turning off
+      return !prev;
+    });
+    window.addEventListener('toggle-delete-mode', handleToggle);
+    return () => window.removeEventListener('toggle-delete-mode', handleToggle);
   }, [])
 
   const load = useCallback(async () => {
@@ -105,6 +130,7 @@ export default function Customers() {
       await bulkDeleteCustomers({ ids: selectedIds })
       toast.success(`${selectedIds.length} customers deleted successfully`)
       setSelectedIds([])
+      setDeleteMode(false)
       load()
       loadPonStats()
     } catch (err) {
@@ -174,15 +200,17 @@ export default function Customers() {
       </div>
 
       {/* Bulk Actions Bar */}
-      {selectedIds.length > 0 && (
-        <div className="fade-up flex items-center gap-4 bg-red-500/10 border border-red-500/20 p-3 rounded-xl mt-6">
-          <span className="text-red-400 font-semibold text-sm pl-2">
-            {selectedIds.length} customers selected
+      {deleteMode && (
+        <div className="fade-up flex flex-wrap items-center gap-3 bg-red-500/10 border border-red-500/20 p-3 rounded-xl mt-6">
+          <button onClick={() => setSelectedIds(customers.map(c => c._id))} className="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Select All</button>
+          <button onClick={() => setSelectedIds([])} className="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Deselect All</button>
+          <span className="text-red-500 dark:text-red-400 font-semibold text-sm pl-1">
+            {selectedIds.length} selected
           </span>
           <button 
             onClick={handleBulkDelete} 
-            disabled={isDeleting}
-            className="btn-primary bg-red-500 hover:bg-red-600 text-white ml-auto border-none"
+            disabled={isDeleting || selectedIds.length === 0}
+            className="btn-primary bg-red-500 hover:bg-red-600 text-white ml-auto border-none disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDeleting ? 'Deleting...' : 'Delete Selected'}
           </button>
@@ -190,19 +218,21 @@ export default function Customers() {
       )}
 
       {/* Desktop Table View */}
-      <div className={`hidden md:block fade-up stagger-2 ${selectedIds.length > 0 ? 'mt-4' : 'mt-6'} rounded-2xl glass-panel overflow-hidden`}>
+      <div className={`hidden md:block fade-up stagger-2 ${deleteMode ? 'mt-4' : 'mt-6'} rounded-2xl glass-panel overflow-hidden`}>
         <div className="overflow-x-auto">
           <table className="tbl">
             <thead>
               <tr className="tbl-head-row">
-                <th className="tbl-head" style={{ width: 40, textAlign: 'center' }}>
-                  <input 
-                    type="checkbox" 
-                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
-                    onChange={toggleSelectAll}
-                    checked={customers.length > 0 && selectedIds.length === customers.length}
-                  />
-                </th>
+                {deleteMode && (
+                  <th className="tbl-head" style={{ width: 40, textAlign: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                      onChange={toggleSelectAll}
+                      checked={customers.length > 0 && selectedIds.length === customers.length}
+                    />
+                  </th>
+                )}
                 {['#',t('name'),t('cafNumber'),t('phone'),t('address'),t('plan'),t('status'),t('paidOn'),t('validTill'),t('balance'),t('actions')]
                   .map((h,i) => <th key={i} className="tbl-head">{h}</th>)}
               </tr>
@@ -222,21 +252,22 @@ export default function Customers() {
               ) : customers.map((c, idx) => {
                 const days = c.validTill ? Math.ceil((new Date(c.validTill)-new Date())/86400000) : null
                 const expiring = days !== null && days <= 5 && days > 0 && c.status !== 'UNPAID'
-                const isExpired = (c.status === 'UNPAID' && c.validTill !== null) || (c.validTill && new Date(c.validTill) < new Date(new Date().setHours(0,0,0,0)))
                 
                 return (
                   <tr key={c._id} className={`tbl-row border-l-4 ${c.status === 'PAID' ? 'bg-emerald-500/10 border-emerald-500' : c.status === 'PARTIAL' ? 'bg-amber-500/10 border-amber-500' : 'bg-red-500/10 border-red-500'}`}>
-                    <td className="tbl-cell" style={{ textAlign: 'center' }}>
-                      <input 
-                        type="checkbox"
-                        className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
-                        checked={selectedIds.includes(c._id)}
-                        onChange={() => toggleSelect(c._id)}
-                      />
-                    </td>
+                    {deleteMode && (
+                      <td className="tbl-cell" style={{ textAlign: 'center' }}>
+                        <input 
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                          checked={selectedIds.includes(c._id)}
+                          onChange={() => toggleSelect(c._id)}
+                        />
+                      </td>
+                    )}
                     <td className="tbl-cell" style={{ color:'var(--text-dim)', fontFamily:'JetBrains Mono,monospace', fontSize:12 }}>{(page - 1) * limit + idx + 1}</td>
                     <td className="tbl-cell" style={{ fontWeight:800, color:'var(--text-base)', fontSize: 16 }}>
-                      {c.name}
+                  <span className="text-emerald-600 dark:text-emerald-500 font-mono text-sm mr-1">#{c.serialNumber}</span> {c.name}
                       {expiring && <span style={{ marginLeft:6, fontSize:11, color:'#fbbf24', fontFamily:'JetBrains Mono,monospace' }}>⚠{days}d</span>}
                     </td>
                     <td className="tbl-cell font-bold text-[var(--text-base)]" style={{ fontFamily:'JetBrains Mono,monospace', fontSize:15 }}>
@@ -247,7 +278,7 @@ export default function Customers() {
                     </td>
                     <td className="tbl-cell font-medium text-slate-600 dark:text-slate-400" style={{ fontSize: 12 }}>{c.address||'NA'}</td>
                     <td className="tbl-cell" style={{ fontFamily:'JetBrains Mono,monospace', color:'var(--text-base)' }}>₹{c.planAmount||291}</td>
-                    <td className="tbl-cell"><StatusBadge status={c.status}/></td>
+                    <td className="tbl-cell"><StatusBadge status={c.status} validTill={c.validTill}/></td>
                     <td className="tbl-cell font-semibold text-[var(--text-base)]" style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>{fmtDate(c.lastPaymentDate)}</td>
                     <td className={`tbl-cell font-semibold ${days&&days<0 ? 'text-red-500' : 'text-[var(--text-base)]'}`} style={{ fontSize:12, fontFamily:'JetBrains Mono,monospace' }}>
                       {fmtDate(c.validTill)}
@@ -291,7 +322,7 @@ export default function Customers() {
       </div>
 
       {/* Mobile Card View */}
-      <div className={`md:hidden fade-up stagger-2 flex flex-col gap-4 ${selectedIds.length > 0 ? 'mt-4' : 'mt-6'}`}>
+      <div className={`md:hidden fade-up stagger-2 flex flex-col gap-4 ${deleteMode ? 'mt-4' : 'mt-6'}`}>
         {loading ? (
           [...Array(4)].map((_,i) => <div key={i} className="skeleton h-40 rounded-2xl w-full"/>)
         ) : customers.length === 0 ? (
@@ -306,15 +337,17 @@ export default function Customers() {
               {/* Top: Name & Checkbox */}
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-start gap-3">
-                  <input 
-                    type="checkbox"
-                    className="w-4 h-4 mt-0.5 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
-                    checked={selectedIds.includes(c._id)}
-                    onChange={() => toggleSelect(c._id)}
-                  />
+                  {deleteMode && (
+                    <input 
+                      type="checkbox"
+                      className="w-4 h-4 mt-0.5 rounded border-[var(--border-color)] bg-[var(--surface2)] text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                      checked={selectedIds.includes(c._id)}
+                      onChange={() => toggleSelect(c._id)}
+                    />
+                  )}
                   <div>
-                    <h3 className="font-extrabold text-[var(--text-base)] text-lg leading-tight mb-1">
-                      {c.name}
+                <h3 className="font-extrabold text-[var(--text-base)] text-lg leading-tight mb-1 flex items-center gap-1.5">
+                  <span className="text-emerald-600 dark:text-emerald-500 font-mono text-xs bg-emerald-500/10 px-1.5 py-0.5 rounded">#{c.serialNumber}</span> {c.name}
                     </h3>
                     <p className="text-sm text-[var(--text-base)] font-bold font-mono">
                       {c.cafNumber}
@@ -322,7 +355,7 @@ export default function Customers() {
                     </p>
                   </div>
                 </div>
-                <StatusBadge status={c.status} />
+                <StatusBadge status={c.status} validTill={c.validTill} rightAlign={true} />
               </div>
               
               {/* Middle: Details */}

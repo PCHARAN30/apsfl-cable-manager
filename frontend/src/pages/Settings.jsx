@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { useLang } from '../context/LanguageContext'
-import { getSettings, updateSettings, markPayment } from '../services/api'
+import { getSettings, updateSettings, markPayment, resetSerials } from '../services/api'
 
 export default function Settings() {
   const { t } = useLang()
@@ -119,6 +119,16 @@ export default function Settings() {
     }
   }
 
+  const handleResetSerials = async () => {
+    if (!window.confirm('Are you sure you want to re-sequence all customer serial numbers sequentially starting from 1?')) return;
+    try {
+      await resetSerials();
+      toast.success('Serial numbers reset successfully');
+    } catch (err) {
+      toast.error('Failed to reset serial numbers');
+    }
+  }
+
   return (
     <div className="page max-w-3xl mx-auto">
       <div className="fade-up flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -193,6 +203,17 @@ export default function Settings() {
             {plans.length === 0 && <div className="text-center py-6 text-slate-500 text-sm">No plans defined. Click "Add Plan" to create one.</div>}
           </div>
         </div>
+
+      {/* Data Management */}
+      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
+        <h2 className="text-lg font-bold text-[var(--text-base)] mb-4">Data Management</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <p className="text-sm text-[var(--text-muted)]">Re-sequence all customer serial numbers sequentially starting from 1.</p>
+          <button onClick={handleResetSerials} className="whitespace-nowrap px-5 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-bold transition-colors flex items-center justify-center gap-2">
+            Reset Serial Numbers
+          </button>
+        </div>
+      </div>
 
         {/* Danger Zone */}
         <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 shadow-sm">

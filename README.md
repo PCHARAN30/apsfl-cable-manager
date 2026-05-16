@@ -6,7 +6,6 @@ A full-stack web application to digitise your cable operator's notebook — mana
 
 ## 📁 Project Structure
 
-```
 apsfl/
 ├── backend/          ← Node.js + Express + MongoDB
 │   ├── config/db.js
@@ -22,9 +21,6 @@ apsfl/
         ├── pages/    ← Dashboard, Customers, Import, Payments
         ├── components/  ← Sidebar, PaymentModal, StatCard, etc.
         └── services/api.js
-```
-
----
 
 ## 🚀 Setup Instructions
 
@@ -132,8 +128,8 @@ Frontend runs on: `http://localhost:5173`
 
 ## 📅 Subscription Logic
 
-- Each "month" = **30 days** (fixed, not calendar month)
-- `validTill = paymentDate + (planMonths × 30)`
+- Billing is based on **calendar months** (with end-of-month clamping).
+- `validTill` advances based on exact calendar date rules.
 - Cron job runs at **9:00 AM every day**
 - If `today > validTill` → status automatically set to `UNPAID`
 

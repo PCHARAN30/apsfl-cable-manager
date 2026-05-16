@@ -58,6 +58,7 @@ export const deleteCustomer = (id) => api.delete(`/customers/${id}`)
 export const importCustomers = (formData) =>
   api.post('/customers/import', formData)  // let axios set multipart headers
 export const bulkDeleteCustomers = (data) => api.post('/customers/bulk-delete', data);
+export const resetSerials = () => api.post('/customers/reset-serials');
 export const getPonStats = () => api.get('/customers/pon-stats');
 
 // ── Payments ───────────────────────────────────────────────────────────────────
